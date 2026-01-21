@@ -111,7 +111,7 @@
 
         function updateClock() {
             const now = new Date();
-            document.getElementById('real-time-clock').innerText = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('real-time-clock').innerText = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
         }
         setInterval(updateClock, 1000);
         updateClock();
@@ -200,26 +200,22 @@
 
         document.getElementById('searchShul').addEventListener('input', renderData);
 
+        // --- מנגנון זמנים מבוסס Date Object (מדויק ביותר) ---
+        
+        // פונקציית עזר להוספת דקות ופרמוט
+        function getAdjustedTime(isoDateString, minutesToAdd) {
+            if (!isoDateString) return "--:--";
+            const date = new Date(isoDateString);
+            date.setMinutes(date.getMinutes() + minutesToAdd);
+            return date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit', hour12: false});
+        }
+
         async function fetchHebcalData() {
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
             const shabbatUrl = "https://www.hebcal.com/shabbat?cfg=json&geonameid=294801&M=on"; 
             const zmanimUrl = `https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date=${dateStr}`;
             const converterUrl = `https://www.hebcal.com/converter?cfg=json&gy=${now.getFullYear()}&gm=${now.getMonth()+1}&gd=${now.getDate()}&g2h=1`;
-
-            const formatTime = (isoString) => {
-                if (!isoString) return "--:--";
-                return new Date(isoString).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-            };
-
-            const addMinutesToTime = (timeStr, minsToAdd) => {
-                if (!timeStr || timeStr === "--:--") return "--:--";
-                const [hours, mins] = timeStr.split(':').map(Number);
-                const date = new Date();
-                date.setHours(hours);
-                date.setMinutes(mins + minsToAdd);
-                return date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-            };
 
             try {
                 const dateRes = await fetch(converterUrl);
@@ -237,18 +233,16 @@
                     const parasha = data.items.find(i => i.category === "parashat");
                     if (parasha) document.getElementById('parasha').innerText = parasha.hebrew;
                     
-                    // כניסת שבת + 11 דקות
                     const candles = data.items.find(i => i.category === "candles");
                     if (candles) {
-                        const baseTime = formatTime(candles.date);
-                        document.getElementById('shabbat-entry').innerText = addMinutesToTime(baseTime, 11);
+                        // כניסת שבת + 11 דקות
+                        document.getElementById('shabbat-entry').innerText = getAdjustedTime(candles.date, 11);
                     }
                     
-                    // יציאת שבת + 7 דקות
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
-                        const baseTime = formatTime(havdalah.date);
-                        document.getElementById('shabbat-exit').innerText = addMinutesToTime(baseTime, 7);
+                        // יציאת שבת + 7 דקות
+                        document.getElementById('shabbat-exit').innerText = getAdjustedTime(havdalah.date, 7);
                         const shabbatDate = havdalah.date.substring(0, 10);
                         fetchRabenuTam(shabbatDate);
                     }
@@ -261,30 +255,39 @@
                     const data = await zmanimRes.json();
                     const times = data.times;
                     
-                    // צאת הכוכבים - 8 דקות
-                    let tzeitTime = times.tzeit; 
-                    const sunsetTime = formatTime(times.sunset);
-                    if (!tzeitTime && sunsetTime !== "--:--") tzeitTime = addMinutesToTime(sunsetTime, 20); 
-                    else if (tzeitTime) tzeitTime = formatTime(tzeitTime);
-                    else tzeitTime = "--:--";
-                    // הורדת 8 דקות
-                    tzeitTime = addMinutesToTime(tzeitTime, -8);
-
+                    // חישובים מדויקים לזמני היום:
+                    
                     // עלות השחר + 14 דקות
-                    let alotTime = times.alotHaShachar ? formatTime(times.alotHaShachar) : "--:--";
-                    alotTime = addMinutesToTime(alotTime, 14);
-
+                    const alot = getAdjustedTime(times.alotHaShachar, 14);
+                    
                     // טלית ותפילין - 2 דקות
-                    let talitTime = times.misheyakir ? formatTime(times.misheyakir) : "--:--";
-                    talitTime = addMinutesToTime(talitTime, -2);
+                    const talit = getAdjustedTime(times.misheyakir, -2);
+                    
+                    // הנץ (ללא שינוי)
+                    const sunrise = getAdjustedTime(times.sunrise, 0);
+                    
+                    // שקיעה (ללא שינוי)
+                    const sunset = getAdjustedTime(times.sunset, 0);
+                    
+                    // צאת הכוכבים: אם אין ב-API, לוקחים שקיעה + 20. ואז מורידים 8 ממה שיצא.
+                    let tzeitDate;
+                    if (times.tzeit) {
+                        tzeitDate = new Date(times.tzeit);
+                    } else {
+                        tzeitDate = new Date(times.sunset);
+                        tzeitDate.setMinutes(tzeitDate.getMinutes() + 20); // ברירת מחדל
+                    }
+                    tzeitDate.setMinutes(tzeitDate.getMinutes() - 8); // הורדת 8 דקות
+                    const tzeit = tzeitDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit', hour12: false});
 
                     const zmanimList = [
-                        { label: "עלות השחר", time: alotTime, icon: "fas fa-cloud-sun" },
-                        { label: "טלית ותפילין", time: talitTime, icon: "fas fa-praying-hands" },
-                        { label: "הנץ (זריחה)", time: formatTime(times.sunrise), icon: "fas fa-sun" },
-                        { label: "שקיעה", time: sunsetTime, icon: "fas fa-sunset" },
-                        { label: "צאת הכוכבים", time: tzeitTime, icon: "fas fa-star" }
+                        { label: "עלות השחר", time: alot, icon: "fas fa-cloud-sun" },
+                        { label: "טלית ותפילין", time: talit, icon: "fas fa-praying-hands" },
+                        { label: "הנץ (זריחה)", time: sunrise, icon: "fas fa-sun" },
+                        { label: "שקיעה", time: sunset, icon: "fas fa-sunset" },
+                        { label: "צאת הכוכבים", time: tzeit, icon: "fas fa-star" }
                     ];
+                    
                     const zmanimBar = document.getElementById('zmanim-bar');
                     zmanimBar.innerHTML = '';
                     zmanimList.forEach((z, index) => {
@@ -310,8 +313,7 @@
                 const data = await res.json();
                 const rt = data.times.tzeit72min;
                 if(rt) {
-                    const time = new Date(rt).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-                    document.getElementById('rt-exit').innerText = `ר"ת: ${time}`;
+                    document.getElementById('rt-exit').innerText = `ר"ת: ${getAdjustedTime(rt, 0)}`;
                 }
             } catch(e) {}
         }
