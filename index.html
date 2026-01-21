@@ -44,7 +44,9 @@
             <div class="flex flex-col md:flex-row justify-between items-center gap-8">
                 <div class="text-center md:text-right">
                     <h1 class="text-2xl md:text-4xl font-black tracking-tight mb-2 text-white">בתי כנסת בטירת הכרמל</h1>
-                    <div class="text-5xl md:text-6xl font-black text-blue-100 digital-clock tracking-widest drop-shadow-lg" id="real-time-clock">--:--:--</div>
+                    <div class="text-5xl md:text-6xl font-black text-blue-100 digital-clock tracking-widest drop-shadow-lg" id="real-time-clock">
+                        --:--:--
+                    </div>
                 </div>
 
                 <div class="flex gap-4">
@@ -71,17 +73,19 @@
     </header>
 
     <main class="container mx-auto px-4 py-8 min-h-[500px] -mt-4 relative z-20">
+
         <div class="bg-white p-2 rounded-xl shadow-md mb-6 flex gap-2 max-w-lg mx-auto">
             <div class="bg-slate-100 p-3 rounded-lg text-slate-500"><i class="fas fa-search"></i></div>
             <input type="text" id="searchShul" placeholder="חפש בית כנסת..." class="w-full bg-transparent outline-none font-medium">
         </div>
 
         <div id="prayers-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <div class="col-span-full text-center py-20 text-slate-500 bg-white rounded-2xl shadow">
-                <i class="fas fa-cloud-download-alt text-4xl mb-4 text-blue-300 animate-bounce"></i>
-                <p>מתחבר לנתונים בזמן אמת...</p>
             </div>
+        <div id="no-prayers-msg" class="hidden text-center py-20 text-slate-500 bg-white rounded-2xl shadow">
+            <i class="fas fa-synagogue text-4xl mb-4 text-slate-300"></i>
+            <p>טוען נתונים או שאין תוצאות...</p>
         </div>
+
     </main>
 
     <a href="admin.html" class="fixed bottom-8 left-8 bg-blue-900 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition z-50 transform hover:scale-110"><i class="fas fa-user-cog text-xl"></i></a>
@@ -119,29 +123,23 @@
         const prayersRef = ref(db, 'prayers');
         const lessonsRef = ref(db, 'lessons');
 
-        // ברגע שיש עדכון בתפילות
         onValue(prayersRef, (snapshot) => {
             const data = snapshot.val();
             liveShuls = data ? Object.values(data) : [];
-            renderData(); // רינדור מחדש
+            renderData();
         });
 
-        // ברגע שיש עדכון בשיעורים
         onValue(lessonsRef, (snapshot) => {
             const data = snapshot.val();
             liveLessons = data ? Object.values(data) : [];
-            renderData(); // רינדור מחדש
+            renderData();
         });
 
-        // --- פונקציית התצוגה הראשית ---
         function renderData() {
             const container = document.getElementById('prayers-grid');
             const search = document.getElementById('searchShul').value.toLowerCase();
             
-            // מיון לפי שם
             liveShuls.sort((a, b) => a.name.localeCompare(b.name, 'he'));
-
-            // סינון
             const filteredShuls = liveShuls.filter(s => s.name.toLowerCase().includes(search));
 
             if (filteredShuls.length === 0) {
@@ -157,7 +155,6 @@
                 const rabbiHtml = shul.rabbi ? `<div class="text-sm text-slate-700 mt-1 flex items-center gap-2 bg-slate-50 p-1.5 rounded"><i class="fas fa-user-tie text-blue-500 w-4"></i> רב: <span class="font-bold">${shul.rabbi}</span></div>` : '';
                 const gabbaiHtml = shul.gabbai ? `<div class="text-sm text-slate-700 mt-1 flex items-center gap-2 bg-slate-50 p-1.5 rounded"><i class="fas fa-user-cog text-orange-500 w-4"></i> גבאי: <span class="font-bold">${shul.gabbai}</span></div>` : '';
                 
-                // שיעורים משויכים
                 const shulLessons = liveLessons.filter(l => l.location === shul.name);
                 let lessonsHtml = '';
                 
@@ -170,7 +167,6 @@
                     shulLessons.forEach(l => {
                         const topicMap = { 'gemara': 'גמרא', 'halacha': 'הלכה', 'parasha': 'פרשה', 'mussar': 'מוסר' };
                         const rabbiName = l.rabbi.trim().startsWith('הרב') ? l.rabbi : `הרב ${l.rabbi}`;
-                        
                         lessonsHtml += `
                             <div class="flex justify-between items-start text-sm bg-white p-2 rounded border border-orange-100 shadow-sm">
                                 <div>
@@ -197,8 +193,8 @@
                             <a href="${mapLink}" target="_blank" class="maps-btn mt-4 w-full justify-center"><i class="fas fa-location-arrow"></i> ניווט</a>
                         </div>
                         <div class="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100 bg-slate-50/50 text-xs">
-                            <div class="p-3"><div class="font-bold text-gray-400 mb-1">חול</div><div>שחרית: <b>${shul.shacharit_chol || '-'}</b></div><div>מנחה: <b>${shul.mincha_chol || '-'}</b></div><div>ערבית: <b>${shul.arvit_chol || '-'}</b></div></div>
-                            <div class="p-3 bg-blue-50/30"><div class="font-bold text-blue-400 mb-1">שבת</div><div>שחרית: <b>${shul.shacharit_shabbat || '-'}</b></div><div>מנחה: <b>${shul.mincha_shabbat || '-'}</b></div><div>ערבית: <b>${shul.arvit_shabbat || '-'}</b></div></div>
+                            <div class="p-3"><div class="font-bold text-gray-400 mb-1">חול</div><div class="space-y-1"><div>שחרית: <span class="font-bold block">${shul.shacharit_chol || '-'}</span></div><div>מנחה: <span class="font-bold block">${shul.mincha_chol || '-'}</span></div><div>ערבית: <span class="font-bold block">${shul.arvit_chol || '-'}</span></div></div></div>
+                            <div class="p-3 bg-blue-50/30"><div class="font-bold text-blue-400 mb-1">שבת</div><div class="space-y-1"><div>שחרית: <span class="font-bold block">${shul.shacharit_shabbat || '-'}</span></div><div>מנחה: <span class="font-bold block">${shul.mincha_shabbat || '-'}</span></div><div>ערבית: <span class="font-bold block">${shul.arvit_shabbat || '-'}</span></div></div></div>
                         </div>
                         <div class="px-3 pb-3 bg-slate-50/50">
                             ${lessonsHtml}
@@ -207,7 +203,6 @@
             });
         }
 
-        // חיפוש בזמן אמת
         document.getElementById('searchShul').addEventListener('input', renderData);
 
         // --- Hebcal API ---
@@ -248,12 +243,18 @@
                     const parasha = data.items.find(i => i.category === "parashat");
                     if (parasha) document.getElementById('parasha').innerText = parasha.hebrew;
                     
+                    // כניסת שבת + 11 דקות
                     const candles = data.items.find(i => i.category === "candles");
-                    if (candles) document.getElementById('shabbat-entry').innerText = formatTime(candles.date);
+                    if (candles) {
+                        const baseTime = formatTime(candles.date);
+                        document.getElementById('shabbat-entry').innerText = addMinutesToTime(baseTime, 11);
+                    }
                     
+                    // יציאת שבת + 7 דקות
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
-                        document.getElementById('shabbat-exit').innerText = formatTime(havdalah.date);
+                        const baseTime = formatTime(havdalah.date);
+                        document.getElementById('shabbat-exit').innerText = addMinutesToTime(baseTime, 7);
                         const shabbatDate = havdalah.date.substring(0, 10);
                         fetchRabenuTam(shabbatDate);
                     }
@@ -266,17 +267,26 @@
                     const data = await zmanimRes.json();
                     const times = data.times;
                     
+                    // צאת הכוכבים - 8 דקות
                     let tzeitTime = times.tzeit; 
                     const sunsetTime = formatTime(times.sunset);
                     if (!tzeitTime && sunsetTime !== "--:--") tzeitTime = addMinutesToTime(sunsetTime, 20); 
                     else if (tzeitTime) tzeitTime = formatTime(tzeitTime);
                     else tzeitTime = "--:--";
+                    // הורדת 8 דקות
+                    tzeitTime = addMinutesToTime(tzeitTime, -8);
 
+                    // עלות השחר + 14 דקות
                     let alotTime = times.alotHaShachar ? formatTime(times.alotHaShachar) : "--:--";
+                    alotTime = addMinutesToTime(alotTime, 14);
+
+                    // טלית ותפילין - 2 דקות
+                    let talitTime = times.misheyakir ? formatTime(times.misheyakir) : "--:--";
+                    talitTime = addMinutesToTime(talitTime, -2);
 
                     const zmanimList = [
                         { label: "עלות השחר", time: alotTime, icon: "fas fa-cloud-sun" },
-                        { label: "טלית ותפילין", time: formatTime(times.misheyakir), icon: "fas fa-praying-hands" },
+                        { label: "טלית ותפילין", time: talitTime, icon: "fas fa-praying-hands" },
                         { label: "הנץ (זריחה)", time: formatTime(times.sunrise), icon: "fas fa-sun" },
                         { label: "שקיעה", time: sunsetTime, icon: "fas fa-sunset" },
                         { label: "צאת הכוכבים", time: tzeitTime, icon: "fas fa-star" }
