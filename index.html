@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בתי כנסת בטירת הכרמל - הלוח הדיגיטלי</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Heebo', sans-serif; background-color: #f1f5f9; }
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15); }
+        .fade-in-up { animation: fadeInUp 0.5s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .maps-btn { @apply bg-green-600 text-white hover:bg-green-700 transition-all duration-200 rounded-lg px-4 py-2 text-sm font-bold flex items-center justify-center gap-2 w-full shadow-sm; }
+        .digital-clock { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-800 bg-slate-100">
+
+    <header class="bg-gradient-to-b from-blue-900 to-blue-800 text-white shadow-xl pb-8 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+            <i class="fas fa-star-of-david absolute top-10 left-10 text-9xl"></i>
+            <i class="fas fa-synagogue absolute bottom-10 right-10 text-9xl"></i>
+        </div>
+
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center border-b border-blue-700/50 text-sm md:text-base relative z-10">
+            <div class="flex items-center gap-2">
+                <i class="far fa-calendar-alt text-blue-300"></i>
+                <span id="hebrew-date" class="font-bold text-lg text-yellow-300">טוען תאריך...</span>
+                <span class="opacity-50 mx-1">|</span>
+                <span id="gregorian-date" class="text-blue-200"></span>
+            </div>
+            <div class="bg-blue-950/80 px-4 py-1 rounded-full border border-blue-600 shadow-lg">
+                <span id="parasha" class="font-bold text-orange-300 tracking-wide">טוען...</span>
+            </div>
+        </div>
+
+        <div class="container mx-auto px-4 mt-6 relative z-10">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8">
+                <div class="text-center md:text-right">
+                    <h1 class="text-2xl md:text-4xl font-black tracking-tight mb-2 text-white">בתי כנסת בטירת הכרמל</h1>
+                    <div class="text-5xl md:text-6xl font-black text-blue-100 digital-clock tracking-widest drop-shadow-lg" id="real-time-clock">--:--:--</div>
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[130px] shadow-lg">
+                        <div class="text-xs text-blue-200 mb-1 font-bold">כניסת שבת</div>
+                        <div id="shabbat-entry" class="text-3xl font-bold text-white tracking-tight">--:--</div>
+                        <div class="mt-1 text-orange-400"><i class="fas fa-candles"></i></div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[130px] shadow-lg">
+                        <div class="text-xs text-blue-200 mb-1 font-bold">צאת שבת</div>
+                        <div id="shabbat-exit" class="text-3xl font-bold text-white tracking-tight">--:--</div>
+                        <div id="rt-exit" class="text-xs text-blue-200 font-bold mt-1 bg-blue-900/50 rounded px-1">ר"ת: --:--</div>
+                        <div class="mt-1 text-purple-300"><i class="fas fa-star"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-blue-950/60 rounded-xl p-3 border border-blue-600/50 overflow-x-auto scrollbar-hide shadow-inner">
+                <div class="flex justify-between items-center min-w-[600px] gap-6 px-2" id="zmanim-bar">
+                    <span class="text-white/50 text-sm animate-pulse">טוען נתונים...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 min-h-[500px] -mt-4 relative z-20">
+        <div class="bg-white p-2 rounded-xl shadow-md mb-6 flex gap-2 max-w-lg mx-auto">
+            <div class="bg-slate-100 p-3 rounded-lg text-slate-500"><i class="fas fa-search"></i></div>
+            <input type="text" id="searchShul" placeholder="חפש בית כנסת..." class="w-full bg-transparent outline-none font-medium">
+        </div>
+
+        <div id="prayers-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div class="col-span-full text-center py-20 text-slate-500 bg-white rounded-2xl shadow">
+                <i class="fas fa-cloud-download-alt text-4xl mb-4 text-blue-300 animate-bounce"></i>
+                <p>מתחבר לנתונים בזמן אמת...</p>
+            </div>
+        </div>
+    </main>
+
+    <a href="admin.html" class="fixed bottom-8 left-8 bg-blue-900 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition z-50 transform hover:scale-110"><i class="fas fa-user-cog text-xl"></i></a>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyArvTHLvtHZwguLn0OpPMMJdqDKS7OnDOg",
+            authDomain: "tirat-carmel-shul.firebaseapp.com",
+            databaseURL: "https://tirat-carmel-shul-default-rtdb.firebaseio.com",
+            projectId: "tirat-carmel-shul",
+            storageBucket: "tirat-carmel-shul.firebasestorage.app",
+            messagingSenderId: "645574971282",
+            appId: "1:645574971282:web:9fb6720ea7c960ca37fb4b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- משתנים לנתונים חיים ---
+        let liveShuls = [];
+        let liveLessons = [];
+
+        // --- שעון ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('real-time-clock').innerText = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- האזנה לנתונים מ-Firebase ---
+        const prayersRef = ref(db, 'prayers');
+        const lessonsRef = ref(db, 'lessons');
+
+        // ברגע שיש עדכון בתפילות
+        onValue(prayersRef, (snapshot) => {
+            const data = snapshot.val();
+            liveShuls = data ? Object.values(data) : [];
+            renderData(); // רינדור מחדש
+        });
+
+        // ברגע שיש עדכון בשיעורים
+        onValue(lessonsRef, (snapshot) => {
+            const data = snapshot.val();
+            liveLessons = data ? Object.values(data) : [];
+            renderData(); // רינדור מחדש
+        });
+
+        // --- פונקציית התצוגה הראשית ---
+        function renderData() {
+            const container = document.getElementById('prayers-grid');
+            const search = document.getElementById('searchShul').value.toLowerCase();
+            
+            // מיון לפי שם
+            liveShuls.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+
+            // סינון
+            const filteredShuls = liveShuls.filter(s => s.name.toLowerCase().includes(search));
+
+            if (filteredShuls.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-white rounded-2xl shadow"><p>לא נמצאו בתי כנסת.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            filteredShuls.forEach(shul => {
+                const mapLink = `https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(shul.address || shul.name + " טירת הכרמל")}`;
+                
+                const rabbiHtml = shul.rabbi ? `<div class="text-sm text-slate-700 mt-1 flex items-center gap-2 bg-slate-50 p-1.5 rounded"><i class="fas fa-user-tie text-blue-500 w-4"></i> רב: <span class="font-bold">${shul.rabbi}</span></div>` : '';
+                const gabbaiHtml = shul.gabbai ? `<div class="text-sm text-slate-700 mt-1 flex items-center gap-2 bg-slate-50 p-1.5 rounded"><i class="fas fa-user-cog text-orange-500 w-4"></i> גבאי: <span class="font-bold">${shul.gabbai}</span></div>` : '';
+                
+                // שיעורים משויכים
+                const shulLessons = liveLessons.filter(l => l.location === shul.name);
+                let lessonsHtml = '';
+                
+                if (shulLessons.length > 0) {
+                    lessonsHtml = `
+                        <div class="mt-4 pt-3 border-t border-slate-100 bg-orange-50/50 p-3 rounded-xl">
+                            <h4 class="font-bold text-orange-800 text-sm mb-2 flex items-center"><i class="fas fa-book-open ml-2"></i>שיעורי תורה במקום</h4>
+                            <div class="space-y-2">
+                    `;
+                    shulLessons.forEach(l => {
+                        const topicMap = { 'gemara': 'גמרא', 'halacha': 'הלכה', 'parasha': 'פרשה', 'mussar': 'מוסר' };
+                        const rabbiName = l.rabbi.trim().startsWith('הרב') ? l.rabbi : `הרב ${l.rabbi}`;
+                        
+                        lessonsHtml += `
+                            <div class="flex justify-between items-start text-sm bg-white p-2 rounded border border-orange-100 shadow-sm">
+                                <div>
+                                    <span class="font-bold text-slate-800 text-base">${rabbiName}</span>
+                                    <div class="text-xs text-slate-500">${l.title} (${topicMap[l.topic] || l.topic})</div>
+                                </div>
+                                <div class="text-left">
+                                    <span class="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.5 rounded font-bold">${l.day}</span>
+                                    <div class="font-bold text-slate-800">${l.time}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    lessonsHtml += `</div></div>`;
+                }
+
+                container.innerHTML += `
+                    <div class="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full fade-in-up">
+                        <div class="p-5 border-b border-slate-100 relative flex-grow">
+                            <span class="absolute top-4 left-4 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full">${shul.nusach || 'תפילה'}</span>
+                            <h3 class="text-lg font-black text-slate-800 mt-1">${shul.name}</h3>
+                            <p class="text-sm text-slate-400 mb-3"><i class="fas fa-map-marker-alt ml-1"></i>${shul.address || 'טירת הכרמל'}</p>
+                            ${rabbiHtml} ${gabbaiHtml}
+                            <a href="${mapLink}" target="_blank" class="maps-btn mt-4 w-full justify-center"><i class="fas fa-location-arrow"></i> ניווט</a>
+                        </div>
+                        <div class="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100 bg-slate-50/50 text-xs">
+                            <div class="p-3"><div class="font-bold text-gray-400 mb-1">חול</div><div>שחרית: <b>${shul.shacharit_chol || '-'}</b></div><div>מנחה: <b>${shul.mincha_chol || '-'}</b></div><div>ערבית: <b>${shul.arvit_chol || '-'}</b></div></div>
+                            <div class="p-3 bg-blue-50/30"><div class="font-bold text-blue-400 mb-1">שבת</div><div>שחרית: <b>${shul.shacharit_shabbat || '-'}</b></div><div>מנחה: <b>${shul.mincha_shabbat || '-'}</b></div><div>ערבית: <b>${shul.arvit_shabbat || '-'}</b></div></div>
+                        </div>
+                        <div class="px-3 pb-3 bg-slate-50/50">
+                            ${lessonsHtml}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // חיפוש בזמן אמת
+        document.getElementById('searchShul').addEventListener('input', renderData);
+
+        // --- Hebcal API ---
+        async function fetchHebcalData() {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const shabbatUrl = "https://www.hebcal.com/shabbat?cfg=json&geonameid=294801&M=on"; 
+            const zmanimUrl = `https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date=${dateStr}`;
+            const converterUrl = `https://www.hebcal.com/converter?cfg=json&gy=${now.getFullYear()}&gm=${now.getMonth()+1}&gd=${now.getDate()}&g2h=1`;
+
+            const formatTime = (isoString) => {
+                if (!isoString) return "--:--";
+                return new Date(isoString).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+            };
+
+            const addMinutesToTime = (timeStr, minsToAdd) => {
+                if (!timeStr || timeStr === "--:--") return "--:--";
+                const [hours, mins] = timeStr.split(':').map(Number);
+                const date = new Date();
+                date.setHours(hours);
+                date.setMinutes(mins + minsToAdd);
+                return date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+            };
+
+            try {
+                const dateRes = await fetch(converterUrl);
+                if (dateRes.ok) {
+                    const data = await dateRes.json();
+                    if(data.hebrew) document.getElementById('hebrew-date').innerText = data.hebrew;
+                    document.getElementById('gregorian-date').innerText = now.toLocaleDateString('he-IL');
+                }
+            } catch(e) {}
+
+            try {
+                const shabbatRes = await fetch(shabbatUrl);
+                if (shabbatRes.ok) {
+                    const data = await shabbatRes.json();
+                    const parasha = data.items.find(i => i.category === "parashat");
+                    if (parasha) document.getElementById('parasha').innerText = parasha.hebrew;
+                    
+                    const candles = data.items.find(i => i.category === "candles");
+                    if (candles) document.getElementById('shabbat-entry').innerText = formatTime(candles.date);
+                    
+                    const havdalah = data.items.find(i => i.category === "havdalah");
+                    if (havdalah) {
+                        document.getElementById('shabbat-exit').innerText = formatTime(havdalah.date);
+                        const shabbatDate = havdalah.date.substring(0, 10);
+                        fetchRabenuTam(shabbatDate);
+                    }
+                }
+            } catch(e) {}
+
+            try {
+                const zmanimRes = await fetch(zmanimUrl);
+                if (zmanimRes.ok) {
+                    const data = await zmanimRes.json();
+                    const times = data.times;
+                    
+                    let tzeitTime = times.tzeit; 
+                    const sunsetTime = formatTime(times.sunset);
+                    if (!tzeitTime && sunsetTime !== "--:--") tzeitTime = addMinutesToTime(sunsetTime, 20); 
+                    else if (tzeitTime) tzeitTime = formatTime(tzeitTime);
+                    else tzeitTime = "--:--";
+
+                    let alotTime = times.alotHaShachar ? formatTime(times.alotHaShachar) : "--:--";
+
+                    const zmanimList = [
+                        { label: "עלות השחר", time: alotTime, icon: "fas fa-cloud-sun" },
+                        { label: "טלית ותפילין", time: formatTime(times.misheyakir), icon: "fas fa-praying-hands" },
+                        { label: "הנץ (זריחה)", time: formatTime(times.sunrise), icon: "fas fa-sun" },
+                        { label: "שקיעה", time: sunsetTime, icon: "fas fa-sunset" },
+                        { label: "צאת הכוכבים", time: tzeitTime, icon: "fas fa-star" }
+                    ];
+                    const zmanimBar = document.getElementById('zmanim-bar');
+                    zmanimBar.innerHTML = '';
+                    zmanimList.forEach((z, index) => {
+                        const isLast = index === zmanimList.length - 1;
+                        zmanimBar.innerHTML += `
+                            <div class="flex flex-col items-center min-w-[80px] text-center">
+                                <span class="text-xs text-blue-200 mb-1">${z.label}</span>
+                                <div class="text-lg font-bold text-white flex items-center gap-2">
+                                    <i class="${z.icon} text-sm opacity-70"></i> ${z.time}
+                                </div>
+                            </div>
+                            ${!isLast ? '<div class="h-8 w-px bg-blue-600/50"></div>' : ''}
+                        `;
+                    });
+                }
+            } catch(e) {}
+        }
+
+        async function fetchRabenuTam(dateStr) {
+            const url = `https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date=${dateStr}`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const rt = data.times.tzeit72min;
+                if(rt) {
+                    const time = new Date(rt).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+                    document.getElementById('rt-exit').innerText = `ר"ת: ${time}`;
+                }
+            } catch(e) {}
+        }
+
+        fetchHebcalData();
+    </script>
+</body>
+</html>
