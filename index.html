@@ -84,7 +84,10 @@
         </div>
     </main>
 
-    <a href="admin.html" class="fixed bottom-8 left-8 bg-blue-900 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition z-50 transform hover:scale-110"><i class="fas fa-user-cog text-xl"></i></a>
+    <a href="admin.html" class="fixed bottom-6 left-6 bg-slate-800 text-white px-5 py-3 rounded-full shadow-2xl hover:bg-slate-700 transition z-50 flex items-center gap-3 font-bold border border-slate-600 opacity-90 hover:opacity-100">
+        <i class="fas fa-user-cog text-xl"></i>
+        <span>ניהול גבאי</span>
+    </a>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -241,11 +244,11 @@
                         document.getElementById('shabbat-entry').innerText = addMinutesToTime(baseTime, 11);
                     }
                     
-                    // יציאת שבת - 14 דקות
+                    // יציאת שבת + 7 דקות
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
                         const baseTime = formatTime(havdalah.date);
-                        document.getElementById('shabbat-exit').innerText = addMinutesToTime(baseTime, -14);
+                        document.getElementById('shabbat-exit').innerText = addMinutesToTime(baseTime, 7);
                         const shabbatDate = havdalah.date.substring(0, 10);
                         fetchRabenuTam(shabbatDate);
                     }
