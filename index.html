@@ -93,6 +93,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // --- הגדרות התאמת זמנים ידנית (בדקות) ---
+        // שנה את המספרים כאן כדי לתקן את הזמנים אם הם לא תואמים ללוח
+        const SHABBAT_EXIT_OFFSET = 0;   // תיקון יציאת שבת (למשל: רשום 2 כדי להוסיף 2 דקות)
+        const SHABBAT_ENTRY_OFFSET = 11; // תוספת קבועה לכניסת שבת
+        const ALOT_OFFSET = 14;          // תוספת לעלות השחר
+        const TALIT_OFFSET = -2;         // הפחתה מטלית ותפילין
+        const TZEIT_OFFSET = -8;         // הפחתה מצאת הכוכבים (אחרי שהוספנו 20 לשקיעה)
+
         const firebaseConfig = {
             apiKey: "AIzaSyArvTHLvtHZwguLn0OpPMMJdqDKS7OnDOg",
             authDomain: "tirat-carmel-shul.firebaseapp.com",
@@ -131,10 +139,8 @@
             renderData();
         });
 
-        // פונקציה שמפרמטת את רשימת הזמנים עם ירידת שורה
         const formatList = (str) => {
             if (!str) return '-';
-            // מחליף את הפסיקים בירידת שורה כדי שכל יום יופיע בנפרד
             return str.replace(/, /g, '<br>');
         };
 
@@ -231,8 +237,13 @@
         async function fetchHebcalData() {
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
-            const shabbatUrl = "https://www.hebcal.com/shabbat?cfg=json&geonameid=294801&M=on"; 
-            const zmanimUrl = `https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date=${dateStr}`;
+            
+            // שימוש בקואורדינטות מדויקות של טירת הכרמל במקום המזהה של חיפה
+            const latitude = 32.7599;
+            const longitude = 34.9707;
+            
+            const shabbatUrl = `https://www.hebcal.com/shabbat?cfg=json&latitude=${latitude}&longitude=${longitude}&M=on&tzid=Asia/Jerusalem`;
+            const zmanimUrl = `https://www.hebcal.com/zmanim?cfg=json&latitude=${latitude}&longitude=${longitude}&date=${dateStr}&tzid=Asia/Jerusalem`;
             const converterUrl = `https://www.hebcal.com/converter?cfg=json&gy=${now.getFullYear()}&gm=${now.getMonth()+1}&gd=${now.getDate()}&g2h=1`;
 
             try {
@@ -253,12 +264,12 @@
                     
                     const candles = data.items.find(i => i.category === "candles");
                     if (candles) {
-                        document.getElementById('shabbat-entry').innerText = getAdjustedTime(candles.date, 11);
+                        document.getElementById('shabbat-entry').innerText = getAdjustedTime(candles.date, SHABBAT_ENTRY_OFFSET);
                     }
                     
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
-                        document.getElementById('shabbat-exit').innerText = getAdjustedTime(havdalah.date, 0);
+                        document.getElementById('shabbat-exit').innerText = getAdjustedTime(havdalah.date, SHABBAT_EXIT_OFFSET);
                         const shabbatDate = havdalah.date.substring(0, 10);
                         fetchRabenuTam(shabbatDate);
                     }
@@ -271,8 +282,8 @@
                     const data = await zmanimRes.json();
                     const times = data.times;
                     
-                    const alot = getAdjustedTime(times.alotHaShachar, 14);
-                    const talit = getAdjustedTime(times.misheyakir, -2);
+                    const alot = getAdjustedTime(times.alotHaShachar, ALOT_OFFSET);
+                    const talit = getAdjustedTime(times.misheyakir, TALIT_OFFSET);
                     const sunrise = getAdjustedTime(times.sunrise, 0);
                     const sunset = getAdjustedTime(times.sunset, 0);
                     
@@ -283,7 +294,7 @@
                         tzeitDate = new Date(times.sunset);
                         tzeitDate.setMinutes(tzeitDate.getMinutes() + 20); 
                     }
-                    tzeitDate.setMinutes(tzeitDate.getMinutes() - 8); 
+                    tzeitDate.setMinutes(tzeitDate.getMinutes() + TZEIT_OFFSET); 
                     const tzeit = tzeitDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit', hour12: false});
 
                     const zmanimList = [
@@ -313,7 +324,10 @@
         }
 
         async function fetchRabenuTam(dateStr) {
-            const url = `https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date=${dateStr}`;
+            // גם כאן, שימוש בקואורדינטות מדויקות
+            const latitude = 32.7599;
+            const longitude = 34.9707;
+            const url = `https://www.hebcal.com/zmanim?cfg=json&latitude=${latitude}&longitude=${longitude}&date=${dateStr}&tzid=Asia/Jerusalem`;
             try {
                 const res = await fetch(url);
                 const data = await res.json();
