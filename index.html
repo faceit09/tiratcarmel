@@ -131,6 +131,13 @@
             renderData();
         });
 
+        // פונקציה שמפרמטת את רשימת הזמנים עם ירידת שורה
+        const formatList = (str) => {
+            if (!str) return '-';
+            // מחליף את הפסיקים בירידת שורה כדי שכל יום יופיע בנפרד
+            return str.replace(/, /g, '<br>');
+        };
+
         function renderData() {
             const container = document.getElementById('prayers-grid');
             const search = document.getElementById('searchShul').value.toLowerCase();
@@ -188,8 +195,22 @@
                             <a href="${mapLink}" target="_blank" class="maps-btn mt-4 w-full justify-center"><i class="fas fa-location-arrow"></i> ניווט</a>
                         </div>
                         <div class="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100 bg-slate-50/50 text-xs">
-                            <div class="p-3"><div class="font-bold text-gray-400 mb-1">חול</div><div class="space-y-1"><div>שחרית: <span class="font-bold block">${shul.shacharit_chol || '-'}</span></div><div>מנחה: <span class="font-bold block">${shul.mincha_chol || '-'}</span></div><div>ערבית: <span class="font-bold block">${shul.arvit_chol || '-'}</span></div></div></div>
-                            <div class="p-3 bg-blue-50/30"><div class="font-bold text-blue-400 mb-1">שבת</div><div class="space-y-1"><div>שחרית: <span class="font-bold block">${shul.shacharit_shabbat || '-'}</span></div><div>מנחה: <span class="font-bold block">${shul.mincha_shabbat || '-'}</span></div><div>ערבית: <span class="font-bold block">${shul.arvit_shabbat || '-'}</span></div></div></div>
+                            <div class="p-3">
+                                <div class="font-bold text-gray-400 mb-1">חול</div>
+                                <div class="space-y-2">
+                                    <div class="border-b border-gray-100 pb-1">שחרית: <span class="font-bold block text-slate-700">${formatList(shul.shacharit_chol)}</span></div>
+                                    <div class="border-b border-gray-100 pb-1">מנחה: <span class="font-bold block text-slate-700">${formatList(shul.mincha_chol)}</span></div>
+                                    <div>ערבית: <span class="font-bold block text-slate-700">${formatList(shul.arvit_chol)}</span></div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-blue-50/30">
+                                <div class="font-bold text-blue-400 mb-1">שבת</div>
+                                <div class="space-y-2">
+                                    <div class="border-b border-blue-100 pb-1">שחרית: <span class="font-bold block text-blue-900">${formatList(shul.shacharit_shabbat)}</span></div>
+                                    <div class="border-b border-blue-100 pb-1">מנחה: <span class="font-bold block text-blue-900">${formatList(shul.mincha_shabbat)}</span></div>
+                                    <div>ערבית: <span class="font-bold block text-blue-900">${formatList(shul.arvit_shabbat)}</span></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="px-3 pb-3 bg-slate-50/50">
                             ${lessonsHtml}
@@ -200,8 +221,6 @@
 
         document.getElementById('searchShul').addEventListener('input', renderData);
 
-        // --- מנגנון זמנים מבוסס Date Object ---
-        
         function getAdjustedTime(isoDateString, minutesToAdd) {
             if (!isoDateString) return "--:--";
             const date = new Date(isoDateString);
@@ -232,16 +251,13 @@
                     const parasha = data.items.find(i => i.category === "parashat");
                     if (parasha) document.getElementById('parasha').innerText = parasha.hebrew;
                     
-                    // כניסת שבת + 11 דקות
                     const candles = data.items.find(i => i.category === "candles");
                     if (candles) {
                         document.getElementById('shabbat-entry').innerText = getAdjustedTime(candles.date, 11);
                     }
                     
-                    // יציאת שבת רגילה (ללא תוספת)
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
-                        // 0 = ללא תוספת דקות, בדיוק כמו ב-API
                         document.getElementById('shabbat-exit').innerText = getAdjustedTime(havdalah.date, 0);
                         const shabbatDate = havdalah.date.substring(0, 10);
                         fetchRabenuTam(shabbatDate);
@@ -255,19 +271,11 @@
                     const data = await zmanimRes.json();
                     const times = data.times;
                     
-                    // עלות השחר + 14 דקות
                     const alot = getAdjustedTime(times.alotHaShachar, 14);
-                    
-                    // טלית ותפילין - 2 דקות
                     const talit = getAdjustedTime(times.misheyakir, -2);
-                    
-                    // הנץ
                     const sunrise = getAdjustedTime(times.sunrise, 0);
-                    
-                    // שקיעה
                     const sunset = getAdjustedTime(times.sunset, 0);
                     
-                    // צאת הכוכבים: שקיעה+20 ואז מינוס 8
                     let tzeitDate;
                     if (times.tzeit) {
                         tzeitDate = new Date(times.tzeit);
