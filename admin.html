@@ -184,10 +184,10 @@
         let editingShulId = null;
         let editingLessonId = null;
         let allShuls = [];
-        let isSuperAdmin = false; // האם המשתמש הוא מנהל ראשי
-        let currentGabbaiShulId = null; // אם זה גבאי, מה ה-ID שלו
+        let isSuperAdmin = false;
+        let currentGabbaiShulId = null;
 
-        // --- לוגין משופר (מנהל מול גבאי) ---
+        // --- לוגין משופר ---
         document.getElementById('loginBtn').onclick = async () => {
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
@@ -197,18 +197,21 @@
             errorMsg.classList.add('hidden');
             loadingMsg.classList.remove('hidden');
 
-            // 1. בדיקת מנהל ראשי (הארד-קודד)
+            // 1. מנהל ראשי
             if (user === 'admin' && pass === '1234') {
                 isSuperAdmin = true;
                 loadingMsg.classList.add('hidden');
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('dashboard-screen').classList.remove('hidden');
-                document.getElementById('authFields').classList.remove('hidden'); // מנהל רואה שדות סיסמה
+                document.getElementById('authFields').classList.remove('hidden'); 
                 document.getElementById('navTitle').innerText = "מנהל מערכת";
+                
+                // קריאה לפונקציה כדי לרנדר את הטבלה מיידית
+                renderShulTable();
                 return;
             }
 
-            // 2. בדיקת גבאי (מול Firebase)
+            // 2. גבאי
             try {
                 const dbRef = ref(db);
                 const snapshot = await get(child(dbRef, `users/${user}`));
@@ -216,7 +219,6 @@
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     if (userData.password === pass) {
-                        // התחברות מוצלחת כגבאי
                         isSuperAdmin = false;
                         currentGabbaiShulId = userData.shulId;
                         
@@ -224,18 +226,15 @@
                         document.getElementById('login-screen').classList.add('hidden');
                         document.getElementById('dashboard-screen').classList.remove('hidden');
                         
-                        // התאמת ממשק לגבאי
                         document.getElementById('navTitle').innerText = `שלום, ${user}`;
-                        document.getElementById('adminNavButtons').classList.add('hidden'); // הסתרת כפתורי ניווט
-                        document.getElementById('shulsListContainer').classList.add('hidden'); // הסתרת הרשימה המלאה
-                        document.getElementById('section-prayers').classList.replace('lg:grid-cols-3', 'grid-cols-1'); // רוחב מלא
-                        document.getElementById('editFormContainer').classList.replace('lg:col-span-1', 'lg:col-span-3'); // רוחב מלא
-                        document.getElementById('cancelEditBtn').classList.add('hidden'); // גבאי לא יכול לבטל עריכה (הוא תקוע על שלו)
+                        document.getElementById('adminNavButtons').classList.add('hidden'); 
+                        document.getElementById('shulsListContainer').classList.add('hidden'); 
+                        document.getElementById('section-prayers').classList.replace('lg:grid-cols-3', 'grid-cols-1'); 
+                        document.getElementById('editFormContainer').classList.replace('lg:col-span-1', 'lg:col-span-3'); 
+                        document.getElementById('cancelEditBtn').classList.add('hidden'); 
                         document.getElementById('formTitle').innerText = "עריכת פרטי בית הכנסת";
 
-                        // טעינת הנתונים של בית הכנסת הספציפי
                         loadSingleShulForGabbai(currentGabbaiShulId);
-                        
                     } else {
                         throw new Error("Wrong pass");
                     }
@@ -245,17 +244,14 @@
             } catch (error) {
                 loadingMsg.classList.add('hidden');
                 errorMsg.classList.remove('hidden');
-                console.error(error);
             }
         };
 
-        // פונקציה לטעינת בית כנסת יחיד לגבאי
         async function loadSingleShulForGabbai(shulId) {
             const snapshot = await get(child(ref(db), `prayers/${shulId}`));
             if (snapshot.exists()) {
                 const data = snapshot.val();
                 loadShulForEdit(shulId, data);
-                // שינוי כפתור השמירה
                 document.getElementById('saveShulBtn').innerText = "שמור שינויים";
             } else {
                 alert("שגיאה: בית הכנסת שלך לא נמצא במערכת.");
@@ -264,7 +260,6 @@
 
         document.getElementById('logoutBtn').onclick = () => location.reload();
 
-        // ניווט (רק למנהל)
         document.getElementById('btn-prayers').onclick = () => switchSection('prayers');
         document.getElementById('btn-lessons').onclick = () => switchSection('lessons');
 
@@ -277,7 +272,6 @@
             document.getElementById('btn-' + section).classList.add('active');
         }
 
-        // --- לוגיקת זמנים ---
         document.getElementById('timeMode').onchange = () => {
             const mode = document.getElementById('timeMode').value;
             const clock = document.getElementById('timeClock');
@@ -331,7 +325,6 @@
             });
         }
 
-        // --- שמירת בית כנסת + משתמש ---
         document.getElementById('saveShulBtn').onclick = () => {
             const name = document.getElementById('shulName').value;
             if (!name) return alert('חובה להזין שם');
@@ -358,8 +351,8 @@
                 nusach: document.getElementById('shulNusach').value,
                 rabbi: document.getElementById('shulRabbi').value,
                 gabbai: document.getElementById('shulGabbai').value,
-                shulUser: document.getElementById('shulUser').value, // שמירה כדי להציג למנהל
-                shulPass: document.getElementById('shulPass').value, // שמירה כדי להציג למנהל
+                shulUser: document.getElementById('shulUser').value,
+                shulPass: document.getElementById('shulPass').value,
                 shacharit_chol: formatTimes(tempTimes.shacharit, false),
                 mincha_chol: formatTimes(tempTimes.mincha, false),
                 arvit_chol: formatTimes(tempTimes.arvit, false),
@@ -373,17 +366,14 @@
             let finalShulId = editingShulId;
 
             if (editingShulId) {
-                // עדכון קיים
                 savePromise = set(ref(db, 'prayers/' + editingShulId), shulData);
             } else {
-                // יצירה חדשה
                 const newRef = push(ref(db, 'prayers'));
                 finalShulId = newRef.key;
                 savePromise = set(newRef, shulData);
             }
 
             savePromise.then(() => {
-                // טיפול ביצירת/עדכון משתמש לגבאי (רק אם מנהל הזין פרטים)
                 const username = document.getElementById('shulUser').value.trim();
                 const password = document.getElementById('shulPass').value.trim();
 
@@ -395,8 +385,7 @@
                 }
 
                 alert('נשמר בהצלחה!');
-                if(isSuperAdmin) resetShulForm(); // מנהל מאפס
-                // גבאי נשאר באותו מסך
+                if(isSuperAdmin) resetShulForm();
             });
         };
 
@@ -420,43 +409,41 @@
 
         document.getElementById('cancelEditBtn').onclick = resetShulForm;
 
-        // האזנה לשינויים (רק למנהל)
+        // טעינת הנתונים
         onValue(ref(db, 'prayers'), (snapshot) => {
             const data = snapshot.val();
-            allShuls = []; // לעדכון רשימת המקומות בשיעורים
-
-            // אם אנחנו מנהל, נרנדר את הטבלה
-            if (isSuperAdmin) {
-                const tbody = document.getElementById('shulTableBody');
-                tbody.innerHTML = '';
-                if (data) {
-                    Object.entries(data).forEach(([id, item]) => {
-                        allShuls.push({id, ...item});
-                        const tr = document.createElement('tr');
-                        tr.className = 'border-b hover:bg-gray-50';
-                        tr.innerHTML = `
-                            <td class="p-3 font-bold">${item.name}</td>
-                            <td class="p-3 text-xs">
-                               ${item.shulUser ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">${item.shulUser}</span>` : '<span class="text-gray-400">-</span>'}
-                            </td>
-                            <td class="p-3 text-center">
-                                <button class="edit-btn text-blue-500 hover:bg-blue-50 p-2 rounded ml-1"><i class="fas fa-pen"></i></button>
-                                <button class="del-btn text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
-                            </td>
-                        `;
-                        tr.querySelector('.del-btn').onclick = () => { if(confirm('למחוק?')) remove(ref(db, 'prayers/' + id)); };
-                        tr.querySelector('.edit-btn').onclick = () => loadShulForEdit(id, item);
-                        tbody.appendChild(tr);
-                    });
-                }
-                updateLessonLocationOptions();
-            } else {
-                // אם גבאי, רק נשמור את הרשימה בצד (למקרה הצורך)
-                if (data) {
-                    Object.entries(data).forEach(([id, item]) => allShuls.push({id, ...item}));
-                }
+            allShuls = []; 
+            if (data) {
+                Object.entries(data).forEach(([id, item]) => allShuls.push({id, ...item}));
             }
+            // אם אנחנו מחוברים כמנהל, נרנדר את הטבלה
+            if (isSuperAdmin) renderShulTable();
+            updateLessonLocationOptions();
         });
+
+        // פונקציית רינדור טבלה שקוראים לה גם אחרי לוגין וגם אחרי עדכון נתונים
+        function renderShulTable() {
+            const tbody = document.getElementById('shulTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            allShuls.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="p-3 font-bold">${item.name}</td>
+                    <td class="p-3 text-xs">
+                       ${item.shulUser ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">${item.shulUser}</span>` : '<span class="text-gray-400">-</span>'}
+                    </td>
+                    <td class="p-3 text-center">
+                        <button class="edit-btn text-blue-500 hover:bg-blue-50 p-2 rounded ml-1"><i class="fas fa-pen"></i></button>
+                        <button class="del-btn text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tr.querySelector('.del-btn').onclick = () => { if(confirm('למחוק?')) remove(ref(db, 'prayers/' + item.id)); };
+                tr.querySelector('.edit-btn').onclick = () => loadShulForEdit(item.id, item);
+                tbody.appendChild(tr);
+            });
+        }
 
         function loadShulForEdit(id, item) {
             editingShulId = id;
@@ -483,9 +470,9 @@
             }
         }
 
-        // --- שיעורים ---
         function updateLessonLocationOptions() {
             const select = document.getElementById('lessonLocationSelect');
+            if(!select) return;
             select.innerHTML = '<option value="" disabled selected>בחר בית כנסת...</option>';
             allShuls.sort((a, b) => a.name.localeCompare(b.name, 'he'));
             allShuls.forEach(s => {
@@ -540,7 +527,7 @@
 
         function resetLessonForm() {
             editingLessonId = null;
-            document.getElementById('addLessonForm').reset(); // פונקציה שלא קיימת, יש לאפס ידנית
+            // איפוס ידני
             document.getElementById('lessonLocationSelect').value = "";
             document.getElementById('lessonRabbi').value = "";
             document.getElementById('lessonTopic').value = "gemara";
@@ -557,9 +544,8 @@
         }
         document.getElementById('cancelLessonEditBtn').onclick = resetLessonForm;
 
-        // טעינת שיעורים בזמן אמת (רק אם מנהל מחובר)
+        // טעינת שיעורים
         onValue(ref(db, 'lessons'), (snapshot) => {
-            // רק אם אנחנו בממשק ניהול פעיל
             const tbody = document.getElementById('lessonsTableBody');
             if(!tbody) return;
             
