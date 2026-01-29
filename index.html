@@ -14,12 +14,19 @@
         .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15); }
         .fade-in-up { animation: fadeInUp 0.5s ease-out; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .maps-btn { @apply bg-green-600 text-white hover:bg-green-700 transition-all duration-200 rounded-lg px-4 py-2 text-sm font-bold flex items-center justify-center gap-2 w-full shadow-sm; }
         .digital-clock { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
+        
+        /* Minyan Alert Animations */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); border-color: #ef4444; }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); border-color: #ef4444; }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); border-color: #ef4444; }
+        }
+        .minyan-alert { animation: pulse-red 2s infinite; border: 2px solid #ef4444; }
     </style>
 </head>
 <body class="text-slate-800 bg-slate-100">
@@ -88,15 +95,19 @@
 
     <div id="shulModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        
         <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto max-h-[90vh]">
-            
             <div class="modal-content py-4 text-right px-6">
                 <div class="flex justify-between items-center pb-3 border-b border-gray-200">
                     <p class="text-2xl font-bold text-blue-900" id="modalTitle">שם בית הכנסת</p>
                     <div class="modal-close cursor-pointer z-50 text-gray-500 hover:text-red-500">
                         <i class="fas fa-times text-2xl"></i>
                     </div>
+                </div>
+
+                <div class="mt-4 flex justify-center">
+                    <button id="btnMinyanSOS" class="bg-red-100 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition rounded-full px-6 py-2 font-bold flex items-center gap-2 text-sm">
+                        <i class="fas fa-bell"></i> חסר לנו מניין! לחץ כאן 🆘
+                    </button>
                 </div>
 
                 <div id="modalBody" class="mt-4 space-y-4">
@@ -123,14 +134,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        // הגדרות זמנים
-        const SHABBAT_EXIT_OFFSET = -7;   
-        const SHABBAT_ENTRY_OFFSET = 0; 
-        const ALOT_OFFSET = 14;          
-        const TALIT_OFFSET = -2;         
-        const TZEIT_OFFSET = -8;         
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyArvTHLvtHZwguLn0OpPMMJdqDKS7OnDOg",
@@ -147,6 +151,9 @@
 
         let liveShuls = [];
         let liveLessons = [];
+        let globalSettings = {};
+        let minyanAlerts = {};
+        let dailyTimes = {}; // אובייקט לשמירת זמני היום (שקיעה וכו')
 
         function updateClock() {
             const now = new Date();
@@ -155,27 +162,71 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        const prayersRef = ref(db, 'prayers');
-        const lessonsRef = ref(db, 'lessons');
+        // האזנה לנתונים
+        onValue(ref(db, 'settings'), (snapshot) => {
+            globalSettings = snapshot.val() || { shabbatEntry: 11, shabbatExit: 0, alot: 14, talit: -2, tzeit: -8 };
+            fetchHebcalData(); // טעינה מחדש של זמנים עם ההגדרות החדשות
+        });
 
-        onValue(prayersRef, (snapshot) => {
+        onValue(ref(db, 'prayers'), (snapshot) => {
             const data = snapshot.val();
-            liveShuls = data ? Object.values(data) : [];
+            liveShuls = data ? Object.entries(data).map(([k, v]) => ({ id: k, ...v })) : [];
             renderData();
         });
 
-        onValue(lessonsRef, (snapshot) => {
+        onValue(ref(db, 'lessons'), (snapshot) => {
             const data = snapshot.val();
             liveLessons = data ? Object.values(data) : [];
             renderData();
         });
 
+        onValue(ref(db, 'minyanAlerts'), (snapshot) => {
+            minyanAlerts = snapshot.val() || {};
+            renderData();
+        });
+
+        // פונקציה לחישוב זמן דינמי (הפיכת טקסט לשעה)
+        function parseDynamicTime(rawText) {
+            if (!rawText || !dailyTimes.sunset) return rawText;
+            
+            // תבנית: X דק' לפני שקיעה
+            if (rawText.includes("לפני שקיעה")) {
+                const mins = parseInt(rawText.match(/\d+/)) || 0;
+                return getAdjustedTime(dailyTimes.sunset, -mins);
+            }
+            // תבנית: צאת הכוכבים
+            if (rawText.includes("צאת הכוכבים")) {
+                return dailyTimes.tzeit;
+            }
+            // תבנית: שקיעה
+            if (rawText.includes("שקיעה")) {
+                return getAdjustedTime(dailyTimes.sunset, 0);
+            }
+            // תבנית: כניסת שבת
+            if (rawText.includes("כניסת שבת")) {
+                return dailyTimes.candles;
+            }
+            // תבנית: הנץ
+            if (rawText.includes("הנץ")) {
+                return dailyTimes.sunrise;
+            }
+
+            return rawText;
+        }
+
+        // עטיפה לפונקציית הפרמוט כדי שתפעיל חישוב זמנים
         const formatList = (str) => {
             if (!str) return '-';
-            return str.replace(/, /g, '<br>');
+            // פיצול לפי פסיק, חישוב כל חלק, וחיבור מחדש עם ירידת שורה
+            return str.split(', ').map(timeStr => {
+                // בדיקה אם זה זמן דינמי שמצריך המרה
+                const calculated = parseDynamicTime(timeStr);
+                // אם השתנה (כלומר חושב), נוסיף בסוגריים את המקור? לא, המשתמש ביקש רק את התוצאה.
+                return calculated; 
+            }).join('<br>');
         };
 
-        // לוגיקת פופ-אפ
+        // --- לוגיקת פופ-אפ ---
         const modal = document.getElementById('shulModal');
         const closeModal = document.querySelectorAll('.modal-close, .modal-overlay');
 
@@ -187,8 +238,18 @@
 
         closeModal.forEach(el => el.addEventListener('click', toggleModal));
 
+        // פונקציה להפעלת התראת מניין
+        window.triggerMinyanAlert = (shulId) => {
+            if (confirm("האם להפעיל התראת חסר מניין ל-10 דקות?")) {
+                const alertRef = ref(db, `minyanAlerts/${shulId}`);
+                set(alertRef, Date.now());
+                alert("ההתראה הופעלה ותופיע בדף הראשי.");
+                toggleModal(); // סגירת המודל
+            }
+        };
+
         window.openShulModal = (shulId) => {
-            const shul = liveShuls.find(s => s.name === shulId || (s.rawTimes && s.name === shulId));
+            const shul = liveShuls.find(s => s.id === shulId); // חיפוש לפי ID אמיתי
             if (!shul) return;
 
             document.getElementById('modalTitle').innerText = shul.name;
@@ -197,18 +258,18 @@
             const mapUrl = `https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(shul.address || shul.name + " טירת הכרמל")}`;
             document.getElementById('modalNavBtn').href = mapUrl;
 
+            // חיבור כפתור ה-SOS
+            const sosBtn = document.getElementById('btnMinyanSOS');
+            sosBtn.onclick = () => triggerMinyanAlert(shul.id);
+
             // שיעורים
             const shulLessons = liveLessons.filter(l => l.location === shul.name);
             let lessonsHtml = '';
             if (shulLessons.length > 0) {
                 lessonsHtml = `<div class="bg-orange-50 p-4 rounded-lg mt-4 border border-orange-100"><h4 class="font-bold text-orange-800 mb-2">שיעורי תורה</h4>`;
                 shulLessons.forEach(l => {
-                    // הוספת "הרב" אם חסר
                     let rabbiName = l.rabbi.trim();
-                    if (!rabbiName.startsWith('הרב')) {
-                        rabbiName = 'הרב ' + rabbiName;
-                    }
-
+                    if (!rabbiName.startsWith('הרב')) rabbiName = 'הרב ' + rabbiName;
                     lessonsHtml += `
                         <div class="flex justify-between items-start text-sm bg-white p-2 mb-2 rounded border border-orange-200">
                             <div><span class="font-bold">${rabbiName}</span> - ${l.title}</div>
@@ -218,34 +279,13 @@
                 lessonsHtml += `</div>`;
             }
 
-            // לוח מודעות ושמות - מוצג רק אם יש תוכן
+            // הודעות
             let messagesHtml = '';
             if (shul.message || shul.refuahNames || shul.iluiNishmatNames) {
                 messagesHtml = `<div class="mt-6 space-y-3">`;
-                
-                if (shul.message) {
-                    messagesHtml += `
-                        <div class="bg-blue-100 p-3 rounded-lg border border-blue-200">
-                            <h5 class="font-bold text-blue-900 mb-1 text-sm"><i class="fas fa-bullhorn ml-1"></i> הודעה חשובה:</h5>
-                            <p class="text-sm whitespace-pre-wrap">${shul.message}</p>
-                        </div>`;
-                }
-
-                if (shul.refuahNames) {
-                    messagesHtml += `
-                        <div class="bg-green-50 p-3 rounded-lg border border-green-200">
-                            <h5 class="font-bold text-green-900 mb-1 text-sm"><i class="fas fa-heartbeat ml-1"></i> לרפואה שלמה:</h5>
-                            <p class="text-sm whitespace-pre-wrap">${shul.refuahNames}</p>
-                        </div>`;
-                }
-
-                if (shul.iluiNishmatNames) {
-                    messagesHtml += `
-                        <div class="bg-gray-100 p-3 rounded-lg border border-gray-300">
-                            <h5 class="font-bold text-gray-800 mb-1 text-sm"><i class="fas fa-candle-holder ml-1"></i> לעילוי נשמת:</h5>
-                            <p class="text-sm whitespace-pre-wrap">${shul.iluiNishmatNames}</p>
-                        </div>`;
-                }
+                if (shul.message) messagesHtml += `<div class="bg-blue-100 p-3 rounded-lg border border-blue-200"><h5 class="font-bold text-blue-900 mb-1 text-sm"><i class="fas fa-bullhorn ml-1"></i> הודעה חשובה:</h5><p class="text-sm whitespace-pre-wrap">${shul.message}</p></div>`;
+                if (shul.refuahNames) messagesHtml += `<div class="bg-green-50 p-3 rounded-lg border border-green-200"><h5 class="font-bold text-green-900 mb-1 text-sm"><i class="fas fa-heartbeat ml-1"></i> לרפואה שלמה:</h5><p class="text-sm whitespace-pre-wrap">${shul.refuahNames}</p></div>`;
+                if (shul.iluiNishmatNames) messagesHtml += `<div class="bg-gray-100 p-3 rounded-lg border border-gray-300"><h5 class="font-bold text-gray-800 mb-1 text-sm"><i class="fas fa-candle-holder ml-1"></i> לעילוי נשמת:</h5><p class="text-sm whitespace-pre-wrap">${shul.iluiNishmatNames}</p></div>`;
                 messagesHtml += `</div>`;
             }
 
@@ -254,41 +294,21 @@
                     <div>
                         <div class="text-sm text-gray-500 mb-1"><i class="fas fa-map-marker-alt ml-2"></i>כתובת</div>
                         <div class="font-bold text-lg mb-3">${shul.address || 'לא צוינה'}</div>
-                        
                         <div class="text-sm text-gray-500 mb-1"><i class="fas fa-book ml-2"></i>נוסח</div>
                         <div class="font-bold text-lg mb-3">${shul.nusach || 'לא צוין'}</div>
-
                         ${shul.rabbi ? `<div class="text-sm text-gray-500 mb-1">רב</div><div class="font-bold text-lg mb-3">${shul.rabbi}</div>` : ''}
                         ${shul.gabbai ? `<div class="text-sm text-gray-500 mb-1">גבאי</div><div class="font-bold text-lg mb-3">${shul.gabbai}</div>` : ''}
                     </div>
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h4 class="font-bold text-blue-900 border-b border-gray-200 pb-2 mb-2">זמני תפילה</h4>
+                        <h4 class="font-bold text-blue-900 border-b border-gray-200 pb-2 mb-2">זמני תפילה (מחושב להיום)</h4>
                         <div class="space-y-3 text-sm">
                             <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <span class="block font-bold text-gray-500">חול - שחרית</span>
-                                    <span>${formatList(shul.shacharit_chol)}</span>
-                                </div>
-                                <div>
-                                    <span class="block font-bold text-blue-500">שבת - שחרית</span>
-                                    <span>${formatList(shul.shacharit_shabbat)}</span>
-                                </div>
-                                <div>
-                                    <span class="block font-bold text-gray-500">חול - מנחה</span>
-                                    <span>${formatList(shul.mincha_chol)}</span>
-                                </div>
-                                <div>
-                                    <span class="block font-bold text-blue-500">שבת - מנחה</span>
-                                    <span>${formatList(shul.mincha_shabbat)}</span>
-                                </div>
-                                <div>
-                                    <span class="block font-bold text-gray-500">חול - ערבית</span>
-                                    <span>${formatList(shul.arvit_chol)}</span>
-                                </div>
-                                <div>
-                                    <span class="block font-bold text-blue-500">שבת - ערבית</span>
-                                    <span>${formatList(shul.arvit_shabbat)}</span>
-                                </div>
+                                <div><span class="block font-bold text-gray-500">חול - שחרית</span><span>${formatList(shul.shacharit_chol)}</span></div>
+                                <div><span class="block font-bold text-blue-500">שבת - שחרית</span><span>${formatList(shul.shacharit_shabbat)}</span></div>
+                                <div><span class="block font-bold text-gray-500">חול - מנחה</span><span>${formatList(shul.mincha_chol)}</span></div>
+                                <div><span class="block font-bold text-blue-500">שבת - מנחה</span><span>${formatList(shul.mincha_shabbat)}</span></div>
+                                <div><span class="block font-bold text-gray-500">חול - ערבית</span><span>${formatList(shul.arvit_chol)}</span></div>
+                                <div><span class="block font-bold text-blue-500">שבת - ערבית</span><span>${formatList(shul.arvit_shabbat)}</span></div>
                             </div>
                         </div>
                     </div>
@@ -314,10 +334,28 @@
             }
 
             container.innerHTML = '';
+            const now = Date.now();
             
             filteredShuls.forEach(shul => {
+                // בדיקת התראת מניין
+                let isAlertActive = false;
+                if (minyanAlerts[shul.id]) {
+                    const diff = now - minyanAlerts[shul.id];
+                    if (diff < 10 * 60 * 1000) { // פחות מ-10 דקות
+                        isAlertActive = true;
+                    }
+                }
+
+                const alertClass = isAlertActive ? 'minyan-alert bg-red-50' : 'bg-white border-slate-100';
+                const alertBadge = isAlertActive ? `<div class="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg animate-pulse">חסר מניין!</div>` : '';
+
+                // תצוגה מקוצרת של זמנים מחושבים
+                const shacharitPreview = shul.shacharit_chol ? parseDynamicTime(shul.shacharit_chol.split(',')[0]) : '-';
+                const minchaPreview = shul.mincha_chol ? parseDynamicTime(shul.mincha_chol.split(',')[0]) : '-';
+
                 container.innerHTML += `
-                    <div onclick="openShulModal('${shul.name}')" class="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full fade-in-up group">
+                    <div onclick="openShulModal('${shul.id}')" class="card-hover ${alertClass} rounded-2xl shadow-sm border overflow-hidden flex flex-col h-full fade-in-up group relative">
+                        ${alertBadge}
                         <div class="p-5 border-b border-slate-100 relative flex-grow group-hover:bg-blue-50/30 transition">
                             <span class="absolute top-4 left-4 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full">${shul.nusach || 'תפילה'}</span>
                             <h3 class="text-lg font-black text-slate-800 mt-1">
@@ -327,8 +365,8 @@
                             <p class="text-sm text-slate-400 mb-3"><i class="fas fa-map-marker-alt ml-1"></i>${shul.address || 'טירת הכרמל'}</p>
                             
                             <div class="text-xs text-gray-500 mt-2">
-                                <div class="flex gap-2 items-center"><span class="font-bold">שחרית:</span> ${shul.shacharit_chol ? shul.shacharit_chol.split(',')[0] + '...' : '-'}</div>
-                                <div class="flex gap-2 items-center"><span class="font-bold">מנחה:</span> ${shul.mincha_chol ? shul.mincha_chol.split(',')[0] + '...' : '-'}</div>
+                                <div class="flex gap-2 items-center"><span class="font-bold">שחרית:</span> ${shacharitPreview}</div>
+                                <div class="flex gap-2 items-center"><span class="font-bold">מנחה:</span> ${minchaPreview}</div>
                             </div>
                             <div class="mt-3 text-center text-blue-500 text-xs font-bold opacity-0 group-hover:opacity-100 transition">לחץ לפרטים ומודעות</div>
                         </div>
@@ -351,6 +389,9 @@
             const latitude = 32.7599;
             const longitude = 34.9707;
             
+            // עדכון תאריך בכותרת כולל יום
+            document.getElementById('gregorian-date').innerText = now.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
+
             const shabbatUrl = `https://www.hebcal.com/shabbat?cfg=json&latitude=${latitude}&longitude=${longitude}&M=on&tzid=Asia/Jerusalem`;
             const zmanimUrl = `https://www.hebcal.com/zmanim?cfg=json&latitude=${latitude}&longitude=${longitude}&date=${dateStr}&tzid=Asia/Jerusalem`;
             const converterUrl = `https://www.hebcal.com/converter?cfg=json&gy=${now.getFullYear()}&gm=${now.getMonth()+1}&gd=${now.getDate()}&g2h=1`;
@@ -360,7 +401,6 @@
                 if (dateRes.ok) {
                     const data = await dateRes.json();
                     if(data.hebrew) document.getElementById('hebrew-date').innerText = data.hebrew;
-                    document.getElementById('gregorian-date').innerText = now.toLocaleDateString('he-IL');
                 }
             } catch(e) {}
 
@@ -372,11 +412,16 @@
                     if (parasha) document.getElementById('parasha').innerText = parasha.hebrew;
                     
                     const candles = data.items.find(i => i.category === "candles");
-                    if (candles) document.getElementById('shabbat-entry').innerText = getAdjustedTime(candles.date, SHABBAT_ENTRY_OFFSET);
+                    if (candles) {
+                        // חישוב זמני שבת לפי הגדרות ניהול
+                        document.getElementById('shabbat-entry').innerText = getAdjustedTime(candles.date, globalSettings.shabbatEntry || 11);
+                        // שמירת כניסת שבת גלובלית לשימוש בחישובי בתי כנסת
+                        dailyTimes.candles = getAdjustedTime(candles.date, globalSettings.shabbatEntry || 11);
+                    }
                     
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
-                        document.getElementById('shabbat-exit').innerText = getAdjustedTime(havdalah.date, SHABBAT_EXIT_OFFSET);
+                        document.getElementById('shabbat-exit').innerText = getAdjustedTime(havdalah.date, globalSettings.shabbatExit || 0);
                         const shabbatDate = havdalah.date.substring(0, 10);
                         fetchRabenuTam(shabbatDate);
                     }
@@ -389,11 +434,11 @@
                     const data = await zmanimRes.json();
                     const times = data.times;
                     
-                    const alot = getAdjustedTime(times.alotHaShachar, ALOT_OFFSET);
-                    const talit = getAdjustedTime(times.misheyakir, TALIT_OFFSET);
-                    const sunrise = getAdjustedTime(times.sunrise, 0);
-                    const sunset = getAdjustedTime(times.sunset, 0);
+                    // שמירת זמני בסיס לחישובים בכרטיסיות
+                    dailyTimes.sunset = times.sunset;
+                    dailyTimes.sunrise = getAdjustedTime(times.sunrise, 0);
                     
+                    // חישוב צאת הכוכבים המותאם
                     let tzeitDate;
                     if (times.tzeit) {
                         tzeitDate = new Date(times.tzeit);
@@ -401,15 +446,21 @@
                         tzeitDate = new Date(times.sunset);
                         tzeitDate.setMinutes(tzeitDate.getMinutes() + 20); 
                     }
-                    tzeitDate.setMinutes(tzeitDate.getMinutes() + TZEIT_OFFSET); 
-                    const tzeit = tzeitDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit', hour12: false});
+                    // שימוש בהגדרה הגלובלית לצאת הכוכבים
+                    tzeitDate.setMinutes(tzeitDate.getMinutes() + (globalSettings.tzeit || -8)); 
+                    dailyTimes.tzeit = tzeitDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit', hour12: false});
+
+                    const alot = getAdjustedTime(times.alotHaShachar, globalSettings.alot || 14);
+                    const talit = getAdjustedTime(times.misheyakir, globalSettings.talit || -2);
+                    const sunrise = getAdjustedTime(times.sunrise, 0);
+                    const sunset = getAdjustedTime(times.sunset, 0);
 
                     const zmanimList = [
                         { label: "עלות השחר", time: alot, icon: "fas fa-cloud-sun" },
                         { label: "טלית ותפילין", time: talit, icon: "fas fa-praying-hands" },
                         { label: "הנץ (זריחה)", time: sunrise, icon: "fas fa-sun" },
                         { label: "שקיעה", time: sunset, icon: "fas fa-sunset" },
-                        { label: "צאת הכוכבים", time: tzeit, icon: "fas fa-star" }
+                        { label: "צאת הכוכבים", time: dailyTimes.tzeit, icon: "fas fa-star" }
                     ];
                     
                     const zmanimBar = document.getElementById('zmanim-bar');
@@ -426,6 +477,9 @@
                             ${!isLast ? '<div class="h-8 w-px bg-blue-600/50"></div>' : ''}
                         `;
                     });
+                    
+                    // רענון התצוגה כדי להחיל את הזמנים החדשים על הכרטיסיות
+                    renderData();
                 }
             } catch(e) {}
         }
@@ -444,6 +498,7 @@
             } catch(e) {}
         }
 
+        // טעינה ראשונית
         fetchHebcalData();
     </script>
 </body>

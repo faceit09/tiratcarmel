@@ -30,7 +30,6 @@
     </div>
 
     <div id="dashboard-screen" class="hidden min-h-screen pb-20">
-        
         <nav class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-50">
             <div class="flex items-center text-blue-900 font-bold text-xl">
                 <i class="fas fa-cloud ml-2"></i> <span id="navTitle">פאנל ניהול</span>
@@ -49,6 +48,33 @@
 
         <div class="container mx-auto p-6">
             
+            <div id="globalSettingsPanel" class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-6 hidden">
+                <h3 class="text-lg font-bold text-indigo-900 mb-3"><i class="fas fa-clock ml-2"></i>הגדרות זמנים גלובליות (דקות)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                    <div>
+                        <label class="block font-bold mb-1">כניסת שבת (+)</label>
+                        <input type="number" id="setting_entry" class="w-full p-2 border rounded text-center" value="11">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">יציאת שבת (+)</label>
+                        <input type="number" id="setting_exit" class="w-full p-2 border rounded text-center" value="0">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">עלות השחר (+)</label>
+                        <input type="number" id="setting_alot" class="w-full p-2 border rounded text-center" value="14">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">טלית/תפילין (-)</label>
+                        <input type="number" id="setting_talit" class="w-full p-2 border rounded text-center" value="-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">צאת הכוכבים (-)</label>
+                        <input type="number" id="setting_tzeit" class="w-full p-2 border rounded text-center" value="-8">
+                    </div>
+                </div>
+                <button id="saveSettingsBtn" class="mt-3 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 font-bold w-full md:w-auto">שמור הגדרות זמנים</button>
+            </div>
+
             <div id="section-prayers" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-1" id="editFormContainer">
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-24 overflow-y-auto max-h-[90vh]">
@@ -58,10 +84,10 @@
                         </div>
                         
                         <div id="authFields" class="bg-yellow-50 p-3 rounded border border-yellow-200 mb-4 hidden">
-                            <h4 class="text-xs font-bold text-yellow-800 mb-2">🔑 פרטי גישה לגבאי (ניהול עצמי)</h4>
+                            <h4 class="text-xs font-bold text-yellow-800 mb-2">🔑 פרטי גישה לגבאי</h4>
                             <div class="grid grid-cols-2 gap-2">
-                                <input type="text" id="shulUser" placeholder="שם משתמש לגבאי" class="w-full p-2 border rounded text-sm">
-                                <input type="text" id="shulPass" placeholder="סיסמה לגבאי" class="w-full p-2 border rounded text-sm">
+                                <input type="text" id="shulUser" placeholder="שם משתמש" class="w-full p-2 border rounded text-sm">
+                                <input type="text" id="shulPass" placeholder="סיסמה" class="w-full p-2 border rounded text-sm">
                             </div>
                         </div>
 
@@ -79,12 +105,10 @@
 
                         <div class="bg-blue-50 p-3 rounded-lg border border-blue-200 mb-4">
                             <label class="block text-xs font-bold text-blue-900 mb-2"><i class="fas fa-bullhorn ml-1"></i> לוח מודעות ושמות</label>
-                            <div class="mb-2">
-                                <textarea id="shulMessage" rows="2" class="w-full p-2 border rounded text-sm focus:ring-2 ring-blue-200" placeholder="הודעה חשובה למתפללים..."></textarea>
-                            </div>
+                            <div class="mb-2"><textarea id="shulMessage" rows="2" class="w-full p-2 border rounded text-sm" placeholder="הודעה חשובה..."></textarea></div>
                             <div class="grid grid-cols-2 gap-2">
-                                <textarea id="shulRefuah" rows="3" class="w-full p-2 border rounded text-sm focus:ring-2 ring-blue-200" placeholder="שמות לרפואה..."></textarea>
-                                <textarea id="shulNishmat" rows="3" class="w-full p-2 border rounded text-sm focus:ring-2 ring-blue-200" placeholder="לעילוי נשמת..."></textarea>
+                                <textarea id="shulRefuah" rows="3" class="w-full p-2 border rounded text-sm" placeholder="שמות לרפואה..."></textarea>
+                                <textarea id="shulNishmat" rows="3" class="w-full p-2 border rounded text-sm" placeholder="לעילוי נשמת..."></textarea>
                             </div>
                         </div>
 
@@ -198,6 +222,31 @@
         let isSuperAdmin = false;
         let currentGabbaiShulId = null;
 
+        // --- טעינת הגדרות גלובליות ---
+        const settingsRef = ref(db, 'settings');
+        onValue(settingsRef, (snapshot) => {
+            const s = snapshot.val();
+            if (s && isSuperAdmin) {
+                document.getElementById('setting_entry').value = s.shabbatEntry || 11;
+                document.getElementById('setting_exit').value = s.shabbatExit || 0;
+                document.getElementById('setting_alot').value = s.alot || 14;
+                document.getElementById('setting_talit').value = s.talit || -2;
+                document.getElementById('setting_tzeit').value = s.tzeit || -8;
+            }
+        });
+
+        document.getElementById('saveSettingsBtn').onclick = () => {
+            const settings = {
+                shabbatEntry: parseInt(document.getElementById('setting_entry').value),
+                shabbatExit: parseInt(document.getElementById('setting_exit').value),
+                alot: parseInt(document.getElementById('setting_alot').value),
+                talit: parseInt(document.getElementById('setting_talit').value),
+                tzeit: parseInt(document.getElementById('setting_tzeit').value)
+            };
+            set(ref(db, 'settings'), settings).then(() => alert('הגדרות זמנים נשמרו בהצלחה!'));
+        };
+
+        // --- לוגין ---
         document.getElementById('loginBtn').onclick = async () => {
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
@@ -213,6 +262,7 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('dashboard-screen').classList.remove('hidden');
                 document.getElementById('authFields').classList.remove('hidden'); 
+                document.getElementById('globalSettingsPanel').classList.remove('hidden'); // הצגת הגדרות זמנים למנהל
                 document.getElementById('navTitle').innerText = "מנהל מערכת";
                 renderShulTable();
                 return;
@@ -350,7 +400,6 @@
                 return filtered.map(i => (i.day === 'chol' || i.day === 'shabbat') ? i.time : `${dayMap[i.day] || i.day} ${i.time}`).join(', ');
             };
 
-            // איסוף כל הנתונים כולל הודעות
             const shulData = {
                 name: name,
                 nickname: document.getElementById('shulNickname').value,
@@ -360,12 +409,9 @@
                 gabbai: document.getElementById('shulGabbai').value,
                 shulUser: document.getElementById('shulUser').value,
                 shulPass: document.getElementById('shulPass').value,
-                
-                // שדות חדשים למודעות
                 message: document.getElementById('shulMessage').value,
                 refuahNames: document.getElementById('shulRefuah').value,
                 iluiNishmatNames: document.getElementById('shulNishmat').value,
-
                 shacharit_chol: formatTimes(tempTimes.shacharit, false),
                 mincha_chol: formatTimes(tempTimes.mincha, false),
                 arvit_chol: formatTimes(tempTimes.arvit, false),
@@ -429,11 +475,9 @@
         onValue(ref(db, 'prayers'), (snapshot) => {
             const data = snapshot.val();
             allShuls = []; 
-            
             if (data) {
                 Object.entries(data).forEach(([id, item]) => allShuls.push({id, ...item}));
             }
-
             if (isSuperAdmin) renderShulTable();
             updateLessonLocationOptions();
         });
@@ -441,12 +485,10 @@
         function renderShulTable() {
             const tbody = document.getElementById('shulTableBody');
             if(!tbody) return;
-            
             if (allShuls.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">לא נמצאו בתי כנסת במערכת.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">לא נמצאו בתי כנסת.</td></tr>';
                 return;
             }
-
             tbody.innerHTML = '';
             allShuls.forEach(item => {
                 const tr = document.createElement('tr');
@@ -478,7 +520,6 @@
             document.getElementById('shulUser').value = item.shulUser || '';
             document.getElementById('shulPass').value = item.shulPass || '';
             
-            // טעינת ההודעות
             document.getElementById('shulMessage').value = item.message || '';
             document.getElementById('shulRefuah').value = item.refuahNames || '';
             document.getElementById('shulNishmat').value = item.iluiNishmatNames || '';
@@ -497,6 +538,7 @@
             }
         }
 
+        // ... שאר קוד השיעורים נשאר זהה ...
         function updateLessonLocationOptions() {
             const select = document.getElementById('lessonLocationSelect');
             if(!select) return;
@@ -573,7 +615,6 @@
         onValue(ref(db, 'lessons'), (snapshot) => {
             const tbody = document.getElementById('lessonsTableBody');
             if(!tbody) return;
-            
             const data = snapshot.val();
             tbody.innerHTML = '';
             if (data) {
