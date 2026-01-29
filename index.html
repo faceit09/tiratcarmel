@@ -199,7 +199,10 @@
                     <div class="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full fade-in-up">
                         <div class="p-5 border-b border-slate-100 relative flex-grow">
                             <span class="absolute top-4 left-4 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full">${shul.nusach || 'תפילה'}</span>
-                            <h3 class="text-lg font-black text-slate-800 mt-1">${shul.name}</h3>
+                            <h3 class="text-lg font-black text-slate-800 mt-1">
+                                ${shul.name}
+                                ${shul.nickname ? `<span class="text-base font-medium text-slate-500 mr-1">(${shul.nickname})</span>` : ''}
+                            </h3>
                             <p class="text-sm text-slate-400 mb-3"><i class="fas fa-map-marker-alt ml-1"></i>${shul.address || 'טירת הכרמל'}</p>
                             ${rabbiHtml} ${gabbaiHtml}
                             <a href="${mapLink}" target="_blank" class="maps-btn mt-4 w-full justify-center"><i class="fas fa-location-arrow"></i> ניווט</a>

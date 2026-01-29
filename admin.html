@@ -56,7 +56,11 @@
                             <button id="cancelEditBtn" class="hidden text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded">ביטול עריכה</button>
                         </div>
                         
-                        <div class="mb-3"><label class="text-xs font-bold text-gray-500">שם בית הכנסת</label><input type="text" id="shulName" class="w-full p-2 border rounded" required></div>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div><label class="text-xs font-bold text-gray-500">שם רשמי</label><input type="text" id="shulName" class="w-full p-2 border rounded" required placeholder="לדוגמה: היכל אהרון"></div>
+                            <div><label class="text-xs font-bold text-gray-500">כינוי (אופציונלי)</label><input type="text" id="shulNickname" class="w-full p-2 border rounded" placeholder="לדוגמה: הבית הגדול"></div>
+                        </div>
+
                         <div class="mb-3"><label class="text-xs font-bold text-gray-500">כתובת</label><input type="text" id="shulAddress" class="w-full p-2 border rounded"></div>
                         <div class="grid grid-cols-2 gap-3 mb-3">
                             <div><label class="text-xs font-bold text-gray-500">נוסח</label><select id="shulNusach" class="w-full p-2 border rounded bg-slate-50"><option value="עדות המזרח">עדות המזרח</option><option value="ספרד">ספרד</option><option value="אשכנז">אשכנז</option><option value="תימן">תימן</option><option value="חב״ד">חב״ד</option><option value="מרוקאי">מרוקאי</option><option value="אחיד">אחיד</option></select></div>
@@ -68,7 +72,6 @@
                             <label class="block text-xs font-bold text-gray-700 mb-2">📅 זמנים</label>
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <select id="timeType" class="p-2 text-sm border rounded"><option value="shacharit">שחרית</option><option value="mincha">מנחה</option><option value="arvit">ערבית</option></select>
-                                
                                 <select id="timeDay" class="p-2 text-sm border rounded">
                                     <option value="chol">ימי חול (רגיל)</option>
                                     <option value="Sunday">יום ראשון</option>
@@ -277,6 +280,7 @@
 
             const shulData = {
                 name: name,
+                nickname: document.getElementById('shulNickname').value, // שמירת הכינוי
                 address: document.getElementById('shulAddress').value,
                 nusach: document.getElementById('shulNusach').value,
                 rabbi: document.getElementById('shulRabbi').value,
@@ -303,6 +307,7 @@
         function resetShulForm() {
             editingShulId = null;
             document.getElementById('shulName').value = '';
+            document.getElementById('shulNickname').value = '';
             document.getElementById('shulAddress').value = '';
             document.getElementById('shulRabbi').value = '';
             document.getElementById('shulGabbai').value = '';
@@ -329,7 +334,10 @@
                     const tr = document.createElement('tr');
                     tr.className = 'border-b hover:bg-gray-50';
                     tr.innerHTML = `
-                        <td class="p-3 font-bold">${item.name}</td>
+                        <td class="p-3 font-bold">
+                            ${item.name}
+                            ${item.nickname ? `<div class="text-xs text-gray-400 font-normal">(${item.nickname})</div>` : ''}
+                        </td>
                         <td class="p-3 text-xs">
                            <div><span class="bg-gray-200 px-1 rounded text-[10px]">${item.nusach || '-'}</span></div>
                            <div class="mt-1"><b>רב:</b> ${item.rabbi || '-'}</div>
@@ -350,6 +358,7 @@
         function loadShulForEdit(id, item) {
             editingShulId = id;
             document.getElementById('shulName').value = item.name;
+            document.getElementById('shulNickname').value = item.nickname || ''; // טעינת הכינוי
             document.getElementById('shulAddress').value = item.address;
             document.getElementById('shulNusach').value = item.nusach;
             document.getElementById('shulRabbi').value = item.rabbi;
