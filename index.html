@@ -10,7 +10,7 @@
     
     <style>
         body { font-family: 'Heebo', sans-serif; background-color: #f1f5f9; }
-        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15); }
         .fade-in-up { animation: fadeInUp 0.5s ease-out; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -18,6 +18,9 @@
         .digital-clock { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Modal Animation */
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
     </style>
 </head>
 <body class="text-slate-800 bg-slate-100">
@@ -84,6 +87,31 @@
         </div>
     </main>
 
+    <div id="shulModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        
+        <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto max-h-[90vh]">
+            
+            <div class="modal-content py-4 text-right px-6">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                    <p class="text-2xl font-bold text-blue-900" id="modalTitle">שם בית הכנסת</p>
+                    <div class="modal-close cursor-pointer z-50 text-gray-500 hover:text-red-500">
+                        <i class="fas fa-times text-2xl"></i>
+                    </div>
+                </div>
+
+                <div id="modalBody" class="mt-4 space-y-4">
+                    </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-200 flex justify-end">
+                    <a id="modalNavBtn" href="#" target="_blank" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold flex items-center gap-2">
+                        <i class="fas fa-location-arrow"></i> נווט למקום
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <a href="admin.html" class="fixed bottom-6 left-6 bg-slate-800 text-white px-5 py-3 rounded-full shadow-2xl hover:bg-slate-700 transition z-50 flex items-center gap-3 font-bold border border-slate-600 opacity-90 hover:opacity-100">
         <i class="fas fa-user-cog text-xl"></i>
         <span>ניהול גבאי</span>
@@ -98,12 +126,11 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // --- הגדרות התאמת זמנים ידנית (בדקות) ---
-        const SHABBAT_EXIT_OFFSET = 0;   // יציאת שבת (0 = ללא שינוי מה-API)
-        const SHABBAT_ENTRY_OFFSET = 11; // תוספת קבועה לכניסת שבת
-        const ALOT_OFFSET = 14;          // תוספת לעלות השחר
-        const TALIT_OFFSET = -2;         // הפחתה מטלית ותפילין
-        const TZEIT_OFFSET = -8;         // הפחתה מצאת הכוכבים (אחרי שהוספנו 20 לשקיעה)
+        const SHABBAT_EXIT_OFFSET = 0;   
+        const SHABBAT_ENTRY_OFFSET = 11; 
+        const ALOT_OFFSET = 14;          
+        const TALIT_OFFSET = -2;         
+        const TZEIT_OFFSET = -8;         
 
         const firebaseConfig = {
             apiKey: "AIzaSyArvTHLvtHZwguLn0OpPMMJdqDKS7OnDOg",
@@ -148,6 +175,94 @@
             return str.replace(/, /g, '<br>');
         };
 
+        // --- לוגיקת פופ-אפ (Modal) ---
+        const modal = document.getElementById('shulModal');
+        const closeModal = document.querySelectorAll('.modal-close, .modal-overlay');
+
+        function toggleModal() {
+            modal.classList.toggle('opacity-0');
+            modal.classList.toggle('pointer-events-none');
+            document.body.classList.toggle('modal-active');
+        }
+
+        closeModal.forEach(el => el.addEventListener('click', toggleModal));
+
+        // הופך אובייקט JS לזמין גלובלית כדי שה-HTML יוכל לקרוא לפונקציה
+        window.openShulModal = (shulId) => {
+            const shul = liveShuls.find(s => s.name === shulId || (s.rawTimes && s.name === shulId)); // מציאת הנתון המקורי
+            if (!shul) return;
+
+            document.getElementById('modalTitle').innerText = shul.name;
+            if(shul.nickname) document.getElementById('modalTitle').innerText += ` (${shul.nickname})`;
+            
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(shul.address || shul.name + " טירת הכרמל")}`;
+            document.getElementById('modalNavBtn').href = mapUrl;
+
+            const shulLessons = liveLessons.filter(l => l.location === shul.name);
+            let lessonsHtml = '';
+            if (shulLessons.length > 0) {
+                lessonsHtml = `<div class="bg-orange-50 p-4 rounded-lg mt-4 border border-orange-100"><h4 class="font-bold text-orange-800 mb-2">שיעורים</h4>`;
+                shulLessons.forEach(l => {
+                    lessonsHtml += `
+                        <div class="flex justify-between items-start text-sm bg-white p-2 mb-2 rounded border border-orange-200">
+                            <div><span class="font-bold">${l.rabbi}</span> - ${l.title}</div>
+                            <div class="text-left"><span class="bg-orange-100 px-1 rounded">${l.day}</span> ${l.time}</div>
+                        </div>`;
+                });
+                lessonsHtml += `</div>`;
+            }
+
+            const detailsHtml = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <div class="text-sm text-gray-500 mb-1"><i class="fas fa-map-marker-alt ml-2"></i>כתובת</div>
+                        <div class="font-bold text-lg mb-3">${shul.address || 'לא צוינה'}</div>
+                        
+                        <div class="text-sm text-gray-500 mb-1"><i class="fas fa-book ml-2"></i>נוסח</div>
+                        <div class="font-bold text-lg mb-3">${shul.nusach || 'לא צוין'}</div>
+
+                        ${shul.rabbi ? `<div class="text-sm text-gray-500 mb-1">רב</div><div class="font-bold text-lg mb-3">${shul.rabbi}</div>` : ''}
+                        ${shul.gabbai ? `<div class="text-sm text-gray-500 mb-1">גבאי</div><div class="font-bold text-lg mb-3">${shul.gabbai}</div>` : ''}
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h4 class="font-bold text-blue-900 border-b border-gray-200 pb-2 mb-2">זמני תפילה</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span class="block font-bold text-gray-500">חול - שחרית</span>
+                                    <span>${formatList(shul.shacharit_chol)}</span>
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-blue-500">שבת - שחרית</span>
+                                    <span>${formatList(shul.shacharit_shabbat)}</span>
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-gray-500">חול - מנחה</span>
+                                    <span>${formatList(shul.mincha_chol)}</span>
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-blue-500">שבת - מנחה</span>
+                                    <span>${formatList(shul.mincha_shabbat)}</span>
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-gray-500">חול - ערבית</span>
+                                    <span>${formatList(shul.arvit_chol)}</span>
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-blue-500">שבת - ערבית</span>
+                                    <span>${formatList(shul.arvit_shabbat)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${lessonsHtml}
+            `;
+
+            document.getElementById('modalBody').innerHTML = detailsHtml;
+            toggleModal();
+        };
+
         function renderData() {
             const container = document.getElementById('prayers-grid');
             const search = document.getElementById('searchShul').value.toLowerCase();
@@ -163,70 +278,22 @@
             container.innerHTML = '';
             
             filteredShuls.forEach(shul => {
-                const mapLink = `https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(shul.address || shul.name + " טירת הכרמל")}`;
-                const rabbiHtml = shul.rabbi ? `<div class="text-sm text-slate-700 mt-1 flex items-center gap-2 bg-slate-50 p-1.5 rounded"><i class="fas fa-user-tie text-blue-500 w-4"></i> רב: <span class="font-bold">${shul.rabbi}</span></div>` : '';
-                const gabbaiHtml = shul.gabbai ? `<div class="text-sm text-slate-700 mt-1 flex items-center gap-2 bg-slate-50 p-1.5 rounded"><i class="fas fa-user-cog text-orange-500 w-4"></i> גבאי: <span class="font-bold">${shul.gabbai}</span></div>` : '';
-                
-                const shulLessons = liveLessons.filter(l => l.location === shul.name);
-                let lessonsHtml = '';
-                
-                if (shulLessons.length > 0) {
-                    lessonsHtml = `
-                        <div class="mt-4 pt-3 border-t border-slate-100 bg-orange-50/50 p-3 rounded-xl">
-                            <h4 class="font-bold text-orange-800 text-sm mb-2 flex items-center"><i class="fas fa-book-open ml-2"></i>שיעורי תורה במקום</h4>
-                            <div class="space-y-2">
-                    `;
-                    shulLessons.forEach(l => {
-                        const topicMap = { 'gemara': 'גמרא', 'halacha': 'הלכה', 'parasha': 'פרשה', 'mussar': 'מוסר' };
-                        const rabbiName = l.rabbi.trim().startsWith('הרב') ? l.rabbi : `הרב ${l.rabbi}`;
-                        lessonsHtml += `
-                            <div class="flex justify-between items-start text-sm bg-white p-2 rounded border border-orange-100 shadow-sm">
-                                <div>
-                                    <span class="font-bold text-slate-800 text-base">${rabbiName}</span>
-                                    <div class="text-xs text-slate-500">${l.title} (${topicMap[l.topic] || l.topic})</div>
-                                </div>
-                                <div class="text-left">
-                                    <span class="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.5 rounded font-bold">${l.day}</span>
-                                    <div class="font-bold text-slate-800">${l.time}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    lessonsHtml += `</div></div>`;
-                }
-
+                // לחיצה על הכרטיס מפעילה את הפופ-אפ
                 container.innerHTML += `
-                    <div class="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full fade-in-up">
-                        <div class="p-5 border-b border-slate-100 relative flex-grow">
+                    <div onclick="openShulModal('${shul.name}')" class="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full fade-in-up group">
+                        <div class="p-5 border-b border-slate-100 relative flex-grow group-hover:bg-blue-50/30 transition">
                             <span class="absolute top-4 left-4 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full">${shul.nusach || 'תפילה'}</span>
                             <h3 class="text-lg font-black text-slate-800 mt-1">
                                 ${shul.name}
                                 ${shul.nickname ? `<span class="text-base font-medium text-slate-500 mr-1">(${shul.nickname})</span>` : ''}
                             </h3>
                             <p class="text-sm text-slate-400 mb-3"><i class="fas fa-map-marker-alt ml-1"></i>${shul.address || 'טירת הכרמל'}</p>
-                            ${rabbiHtml} ${gabbaiHtml}
-                            <a href="${mapLink}" target="_blank" class="maps-btn mt-4 w-full justify-center"><i class="fas fa-location-arrow"></i> ניווט</a>
-                        </div>
-                        <div class="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100 bg-slate-50/50 text-xs">
-                            <div class="p-3">
-                                <div class="font-bold text-gray-400 mb-1">חול</div>
-                                <div class="space-y-2">
-                                    <div class="border-b border-gray-100 pb-1">שחרית: <span class="font-bold block text-slate-700">${formatList(shul.shacharit_chol)}</span></div>
-                                    <div class="border-b border-gray-100 pb-1">מנחה: <span class="font-bold block text-slate-700">${formatList(shul.mincha_chol)}</span></div>
-                                    <div>ערבית: <span class="font-bold block text-slate-700">${formatList(shul.arvit_chol)}</span></div>
-                                </div>
+                            
+                            <div class="text-xs text-gray-500 mt-2">
+                                <div class="flex gap-2 items-center"><span class="font-bold">שחרית:</span> ${shul.shacharit_chol ? shul.shacharit_chol.split(',')[0] + '...' : '-'}</div>
+                                <div class="flex gap-2 items-center"><span class="font-bold">מנחה:</span> ${shul.mincha_chol ? shul.mincha_chol.split(',')[0] + '...' : '-'}</div>
                             </div>
-                            <div class="p-3 bg-blue-50/30">
-                                <div class="font-bold text-blue-400 mb-1">שבת</div>
-                                <div class="space-y-2">
-                                    <div class="border-b border-blue-100 pb-1">שחרית: <span class="font-bold block text-blue-900">${formatList(shul.shacharit_shabbat)}</span></div>
-                                    <div class="border-b border-blue-100 pb-1">מנחה: <span class="font-bold block text-blue-900">${formatList(shul.mincha_shabbat)}</span></div>
-                                    <div>ערבית: <span class="font-bold block text-blue-900">${formatList(shul.arvit_shabbat)}</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="px-3 pb-3 bg-slate-50/50">
-                            ${lessonsHtml}
+                            <div class="mt-3 text-center text-blue-500 text-xs font-bold opacity-0 group-hover:opacity-100 transition">לחץ לפרטים מלאים</div>
                         </div>
                     </div>`;
             });
@@ -244,8 +311,6 @@
         async function fetchHebcalData() {
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
-            
-            // שימוש בקואורדינטות מדויקות של טירת הכרמל
             const latitude = 32.7599;
             const longitude = 34.9707;
             
@@ -270,9 +335,7 @@
                     if (parasha) document.getElementById('parasha').innerText = parasha.hebrew;
                     
                     const candles = data.items.find(i => i.category === "candles");
-                    if (candles) {
-                        document.getElementById('shabbat-entry').innerText = getAdjustedTime(candles.date, SHABBAT_ENTRY_OFFSET);
-                    }
+                    if (candles) document.getElementById('shabbat-entry').innerText = getAdjustedTime(candles.date, SHABBAT_ENTRY_OFFSET);
                     
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
