@@ -89,14 +89,18 @@
         <span>ניהול גבאי</span>
     </a>
 
+    <a href="https://kosher-e90e3.web.app/" target="_blank" class="fixed bottom-6 right-6 bg-red-600 text-white px-5 py-3 rounded-full shadow-2xl hover:bg-red-700 transition z-50 flex items-center gap-3 font-bold border border-red-500 opacity-90 hover:opacity-100">
+        <i class="fab fa-youtube text-xl"></i>
+        <span>יוטיוב כשר</span>
+    </a>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // --- הגדרות התאמת זמנים ידנית (בדקות) ---
-        // שנה את המספרים כאן כדי לתקן את הזמנים אם הם לא תואמים ללוח
-        const SHABBAT_EXIT_OFFSET = -7;   // תיקון יציאת שבת (למשל: רשום 2 כדי להוסיף 2 דקות)
-        const SHABBAT_ENTRY_OFFSET = -2; // תוספת קבועה לכניסת שבת
+        const SHABBAT_EXIT_OFFSET = 0;   // יציאת שבת (0 = ללא שינוי מה-API)
+        const SHABBAT_ENTRY_OFFSET = 11; // תוספת קבועה לכניסת שבת
         const ALOT_OFFSET = 14;          // תוספת לעלות השחר
         const TALIT_OFFSET = -2;         // הפחתה מטלית ותפילין
         const TZEIT_OFFSET = -8;         // הפחתה מצאת הכוכבים (אחרי שהוספנו 20 לשקיעה)
@@ -238,7 +242,7 @@
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
             
-            // שימוש בקואורדינטות מדויקות של טירת הכרמל במקום המזהה של חיפה
+            // שימוש בקואורדינטות מדויקות של טירת הכרמל
             const latitude = 32.7599;
             const longitude = 34.9707;
             
@@ -324,7 +328,6 @@
         }
 
         async function fetchRabenuTam(dateStr) {
-            // גם כאן, שימוש בקואורדינטות מדויקות
             const latitude = 32.7599;
             const longitude = 34.9707;
             const url = `https://www.hebcal.com/zmanim?cfg=json&latitude=${latitude}&longitude=${longitude}&date=${dateStr}&tzid=Asia/Jerusalem`;
@@ -341,4 +344,4 @@
         fetchHebcalData();
     </script>
 </body>
-</html>SHABBAT_EXIT_OFFSET
+</html>
