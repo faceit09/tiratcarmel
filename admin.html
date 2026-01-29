@@ -125,7 +125,7 @@
                 <div class="lg:col-span-2" id="shulsListContainer">
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-full">
                         <h3 class="font-bold text-lg mb-4">רשימת בתי הכנסת</h3>
-                        <div class="overflow-x-auto"><table class="w-full text-right text-sm"><thead class="bg-gray-50 text-gray-500 uppercase"><tr><th class="p-3">שם</th><th class="p-3">גבאי מורשה</th><th class="p-3 text-center">פעולות</th></tr></thead><tbody id="shulTableBody"></tbody></table></div>
+                        <div class="overflow-x-auto"><table class="w-full text-right text-sm"><thead class="bg-gray-50 text-gray-500 uppercase"><tr><th class="p-3">שם</th><th class="p-3">גבאי מורשה</th><th class="p-3 text-center">פעולות</th></tr></thead><tbody id="shulTableBody"><tr><td colspan="3" class="p-4 text-center text-gray-500">טוען נתונים...</td></tr></tbody></table></div>
                     </div>
                 </div>
             </div>
@@ -206,7 +206,7 @@
                 document.getElementById('authFields').classList.remove('hidden'); 
                 document.getElementById('navTitle').innerText = "מנהל מערכת";
                 
-                // קריאה לפונקציה כדי לרנדר את הטבלה מיידית
+                // כפייה של רינדור הטבלה מיד לאחר הכניסה
                 renderShulTable();
                 return;
             }
@@ -409,22 +409,34 @@
 
         document.getElementById('cancelEditBtn').onclick = resetShulForm;
 
-        // טעינת הנתונים
+        // טעינת הנתונים מהענן
         onValue(ref(db, 'prayers'), (snapshot) => {
             const data = snapshot.val();
             allShuls = []; 
+            
             if (data) {
                 Object.entries(data).forEach(([id, item]) => allShuls.push({id, ...item}));
+            } else {
+                // בדיקה אם הנתונים באמת ריקים (רק כדי לדעת)
+                console.log("No synagogues found in Firebase.");
             }
-            // אם אנחנו מחוברים כמנהל, נרנדר את הטבלה
+
+            // עדכון הטבלה (רק אם מחובר כמנהל)
             if (isSuperAdmin) renderShulTable();
+            
             updateLessonLocationOptions();
         });
 
-        // פונקציית רינדור טבלה שקוראים לה גם אחרי לוגין וגם אחרי עדכון נתונים
+        // פונקציית רינדור הטבלה - כעת חזקה יותר
         function renderShulTable() {
             const tbody = document.getElementById('shulTableBody');
             if(!tbody) return;
+            
+            if (allShuls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">לא נמצאו בתי כנסת במערכת.</td></tr>';
+                return;
+            }
+
             tbody.innerHTML = '';
             allShuls.forEach(item => {
                 const tr = document.createElement('tr');
@@ -527,7 +539,6 @@
 
         function resetLessonForm() {
             editingLessonId = null;
-            // איפוס ידני
             document.getElementById('lessonLocationSelect').value = "";
             document.getElementById('lessonRabbi').value = "";
             document.getElementById('lessonTopic').value = "gemara";
@@ -544,7 +555,6 @@
         }
         document.getElementById('cancelLessonEditBtn').onclick = resetLessonForm;
 
-        // טעינת שיעורים
         onValue(ref(db, 'lessons'), (snapshot) => {
             const tbody = document.getElementById('lessonsTableBody');
             if(!tbody) return;
