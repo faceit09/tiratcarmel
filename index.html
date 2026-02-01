@@ -110,7 +110,8 @@
                     </button>
                 </div>
 
-                <div id="modalBody" class="mt-4 space-y-4"></div>
+                <div id="modalBody" class="mt-4 space-y-4">
+                    </div>
 
                 <div class="mt-6 pt-4 border-t border-gray-200 flex justify-end">
                     <a id="modalNavBtn" href="#" target="_blank" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold flex items-center gap-2">
@@ -183,18 +184,15 @@
             renderData();
         });
 
-        // פונקציית חישוב חכמה - מחליפה רק את החלק הדינמי ושומרת על היום
         function parseDynamicTime(rawText) {
             if (!rawText || !dailyTimes.sunset) return rawText;
             
             let timeStr = rawText;
             let calculatedTime = "";
 
-            // בדיקת דפוסים
             if (rawText.includes("לפני שקיעה")) {
                 const mins = parseInt(rawText.match(/(\d+)\s*דק/)?.[1] || 0);
                 calculatedTime = getAdjustedTime(dailyTimes.sunset, -mins);
-                // החלפת החלק של השעה בלבד, שמירת שאר הטקסט (כמו "יום ראשון")
                 timeStr = timeStr.replace(/\d+\s*דק'\s*לפני\s*שקיעה/, calculatedTime);
             }
             else if (rawText.includes("צאת הכוכבים")) {
@@ -276,9 +274,9 @@
                 messagesHtml += `</div>`;
             }
 
-            // תוכן המודל - זהה לכרטיס אבל מורחב
+            // החזרת טבלת הזמנים המלאה לפופ-אפ
             const detailsHtml = `
-                <div class="grid grid-cols-1 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <div class="text-sm text-gray-500 mb-1"><i class="fas fa-map-marker-alt ml-2"></i>כתובת</div>
                         <div class="font-bold text-lg mb-3">${shul.address || 'לא צוינה'}</div>
@@ -286,6 +284,19 @@
                         <div class="font-bold text-lg mb-3">${shul.nusach || 'לא צוין'}</div>
                         ${shul.rabbi ? `<div class="text-sm text-gray-500 mb-1">רב</div><div class="font-bold text-lg mb-3">${shul.rabbi}</div>` : ''}
                         ${shul.gabbai ? `<div class="text-sm text-gray-500 mb-1">גבאי</div><div class="font-bold text-lg mb-3">${shul.gabbai}</div>` : ''}
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h4 class="font-bold text-blue-900 border-b border-gray-200 pb-2 mb-2">זמני תפילה (מחושב להיום)</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><span class="block font-bold text-gray-500">חול - שחרית</span><span>${formatList(shul.shacharit_chol)}</span></div>
+                                <div><span class="block font-bold text-blue-500">שבת - שחרית</span><span>${formatList(shul.shacharit_shabbat)}</span></div>
+                                <div><span class="block font-bold text-gray-500">חול - מנחה</span><span>${formatList(shul.mincha_chol)}</span></div>
+                                <div><span class="block font-bold text-blue-500">שבת - מנחה</span><span>${formatList(shul.mincha_shabbat)}</span></div>
+                                <div><span class="block font-bold text-gray-500">חול - ערבית</span><span>${formatList(shul.arvit_chol)}</span></div>
+                                <div><span class="block font-bold text-blue-500">שבת - ערבית</span><span>${formatList(shul.arvit_shabbat)}</span></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 ${lessonsHtml}
@@ -321,7 +332,6 @@
                 const alertClass = isAlertActive ? 'minyan-alert bg-red-50' : 'bg-white border-slate-100';
                 const alertBadge = isAlertActive ? `<div class="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg animate-pulse z-20">חסר מניין!</div>` : '';
 
-                // תצוגה מלאה בתוך הכרטיס (בלי לחיצה)
                 container.innerHTML += `
                     <div class="card-hover ${alertClass} rounded-2xl shadow-sm border overflow-hidden flex flex-col h-full fade-in-up group relative">
                         ${alertBadge}
