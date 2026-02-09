@@ -53,7 +53,10 @@
             <div id="section-prayers" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-1" id="editFormContainer">
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h3 class="font-bold text-lg text-green-700 mb-4" id="formTitle">הוספת בית כנסת</h3>
+                        <div class="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 class="font-bold text-lg text-green-700" id="formTitle">הוספת בית כנסת</h3>
+                            <button id="cancelEditBtn" class="hidden text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded">ביטול / חדש</button>
+                        </div>
                         
                         <div id="authFields" class="bg-yellow-50 p-3 rounded border border-yellow-200 mb-4 hidden">
                             <label class="block text-xs font-bold mb-1">🔑 פרטי גישה לגבאי</label>
@@ -74,17 +77,21 @@
 
                         <div class="bg-gray-50 p-3 rounded-lg border mb-4">
                             <div class="grid grid-cols-2 gap-2 mb-2">
-                                <select id="timeType" class="p-2 text-sm border rounded"><option value="shacharit">שחרית</option><option value="mincha">מנחה</option><option value="arvit">ערבית</option></select>
+                                <select id="timeType" class="p-2 text-sm border rounded">
+                                    <option value="shacharit">שחרית</option>
+                                    <option value="mincha">מנחה</option>
+                                    <option value="arvit">ערבית</option>
+                                </select>
                                 <select id="timeDay" class="p-2 text-sm border rounded">
-                                    <option value="chol">ימי חול</option>
+                                    <option value="חול">ימי חול</option>
                                     <option value="יום ראשון">יום ראשון</option>
                                     <option value="יום שני">יום שני</option>
                                     <option value="יום שלישי">יום שלישי</option>
                                     <option value="יום רביעי">יום רביעי</option>
                                     <option value="יום חמישי">יום חמישי</option>
                                     <option value="יום שישי">יום שישי</option>
+                                    <option value="שבת">שבת</option>
                                     <option value="מוצ״ש">מוצ״ש</option>
-                                    <option value="shabbat">שבת</option>
                                 </select>
                             </div>
                             <select id="timeMode" class="w-full p-2 text-sm border rounded mb-2">
@@ -115,7 +122,7 @@
                 <div class="lg:col-span-2" id="shulsListContainer">
                     <div class="bg-white p-6 rounded-xl shadow-sm border h-full">
                         <h3 class="font-bold text-lg mb-4">בתי כנסת במערכת</h3>
-                        <div class="overflow-x-auto"><table class="w-full text-right text-sm"><thead><tr class="bg-gray-50"><th class="p-3">שם</th><th class="p-3">גבאי</th><th class="p-3 text-center">פעולות</th></tr></thead><tbody id="shulTableBody"></tbody></table></div>
+                        <div class="overflow-x-auto"><table class="w-full text-right text-sm"><thead><tr class="bg-gray-50"><th class="p-3">שם</th><th class="p-3">כינוי</th><th class="p-3 text-center">פעולות</th></tr></thead><tbody id="shulTableBody"></tbody></table></div>
                     </div>
                 </div>
             </div>
@@ -143,12 +150,6 @@
         let editingShulId = null;
         let isSuperAdmin = false;
 
-        // תרגום ימים לעברית
-        const translateDay = (day) => {
-            const map = { 'chol': 'חול', 'shabbat': 'שבת', 'Sunday': 'יום ראשון', 'Monday': 'יום שני', 'Tuesday': 'יום שלישי', 'Wednesday': 'יום רביעי', 'Thursday': 'יום חמישי', 'Friday': 'יום שישי', 'Motzash': 'מוצ״ש' };
-            return map[day] || day;
-        };
-
         document.getElementById('loginBtn').onclick = async () => {
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
@@ -158,6 +159,7 @@
                 document.getElementById('dashboard-screen').classList.remove('hidden');
                 document.getElementById('authFields').classList.remove('hidden'); 
                 document.getElementById('globalSettingsPanel').classList.remove('hidden');
+                renderShulTable();
                 return;
             }
             const snapshot = await get(child(ref(db), `users/${user}`));
@@ -186,13 +188,13 @@
 
         document.getElementById('addTimeBtn').onclick = () => {
             const type = document.getElementById('timeType').value;
-            const day = translateDay(document.getElementById('timeDay').value);
+            const day = document.getElementById('timeDay').value; // כבר בעברית
             const mode = document.getElementById('timeMode').value;
             let val = "";
             if (mode === 'manual') val = document.getElementById('timeClock').value;
             else if (mode === 'before_sunset') val = `${document.getElementById('minutesInput').value} דק' לפני שקיעה`;
             else if (mode === 'before_exit_shabbat') val = `${document.getElementById('minutesInput').value} דק' לפני צאת שבת`;
-            else val = { 'sunset': 'שקיעה', 'stars': 'צאת הכוכבים', 'exit_shabbat': 'צאת שבת' }[mode];
+            else val = { 'sunset': 'שקיעה', 'stars': 'צאת הכוכבים', 'exit_shabbat': 'צאת שבת', 'candles': 'כניסת שבת', 'sunrise': 'הנץ' }[mode];
 
             if(!val) return alert("הזן זמן");
             tempTimes[type].push({ day, time: val });
@@ -207,8 +209,8 @@
                     document.getElementById(`list-${type}`).classList.remove('hidden');
                     tempTimes[type].forEach((item, index) => {
                         const tag = document.createElement('div');
-                        tag.className = 'bg-gray-100 p-1 rounded m-1 flex items-center';
-                        tag.innerHTML = `<span>${item.day}: ${item.time}</span><button class="text-red-500 ml-2">×</button>`;
+                        tag.className = 'bg-gray-100 p-1 rounded m-1 flex items-center text-[10px]';
+                        tag.innerHTML = `<span>${item.day}: ${item.time}</span><button class="text-red-500 ml-1">×</button>`;
                         tag.querySelector('button').onclick = () => { tempTimes[type].splice(index, 1); renderTempTimes(); };
                         container.appendChild(tag);
                     });
@@ -219,26 +221,37 @@
         document.getElementById('saveShulBtn').onclick = () => {
             const name = document.getElementById('shulName').value;
             if(!name) return alert("שם חובה");
-            const format = (list, isShabbat) => {
-                const shabbatSet = ['שבת', 'חג', 'מוצ״ש'];
-                return list.filter(i => isShabbat ? shabbatSet.includes(i.day) : !shabbatSet.includes(i.day))
-                    .map(i => `${i.day === 'חול' ? '' : i.day + ' '}${i.time}`).join(', ');
+            
+            const format = (list, isShabbatCol) => {
+                const shabbatKeywords = ['שבת', 'חג', 'מוצ״ש'];
+                return list
+                    .filter(i => isShabbatCol ? shabbatKeywords.some(k => i.day.includes(k)) : !shabbatKeywords.some(k => i.day.includes(k)))
+                    .map(i => `${i.day === 'חול' ? '' : i.day + ' '}${i.time}`)
+                    .join(', ');
             };
+
             const data = {
-                name, nickname: document.getElementById('shulNickname').value,
+                name, 
+                nickname: document.getElementById('shulNickname').value,
                 message: document.getElementById('shulMessage').value,
                 refuahNames: document.getElementById('shulRefuah').value,
                 iluiNishmatNames: document.getElementById('shulNishmat').value,
-                shacharit_chol: format(tempTimes.shacharit, false), mincha_chol: format(tempTimes.mincha, false), arvit_chol: format(tempTimes.arvit, false),
-                shacharit_shabbat: format(tempTimes.shacharit, true), mincha_shabbat: format(tempTimes.mincha, true), arvit_shabbat: format(tempTimes.arvit, true),
+                shacharit_chol: format(tempTimes.shacharit, false), 
+                mincha_chol: format(tempTimes.mincha, false), 
+                arvit_chol: format(tempTimes.arvit, false),
+                shacharit_shabbat: format(tempTimes.shacharit, true), 
+                mincha_shabbat: format(tempTimes.mincha, true), 
+                arvit_shabbat: format(tempTimes.arvit, true),
                 rawTimes: tempTimes
             };
+
             const shulRef = editingShulId ? ref(db, 'prayers/' + editingShulId) : push(ref(db, 'prayers'));
             set(shulRef, data).then(() => {
                 if(isSuperAdmin && document.getElementById('shulUser').value) {
                     set(ref(db, 'users/' + document.getElementById('shulUser').value), { password: document.getElementById('shulPass').value, shulId: shulRef.key });
                 }
-                alert("נשמר!"); location.reload();
+                alert("נשמר בהצלחה!");
+                location.reload();
             });
         };
 
@@ -249,7 +262,8 @@
             if (snap.val()) {
                 Object.entries(snap.val()).forEach(([id, val]) => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td class="p-3">${val.name}</td><td class="p-3">${val.nickname || '-'}</td><td class="p-3 text-center"><button class="text-blue-500">ערוך</button></td>`;
+                    tr.className = "border-b";
+                    tr.innerHTML = `<td class="p-3 font-bold">${val.name}</td><td class="p-3">${val.nickname || '-'}</td><td class="p-3 text-center"><button class="bg-blue-500 text-white px-2 py-1 rounded text-xs">ערוך</button></td>`;
                     tr.querySelector('button').onclick = () => loadShulForEdit(id, val);
                     tbody.appendChild(tr);
                 });
@@ -265,7 +279,23 @@
             document.getElementById('shulNishmat').value = item.iluiNishmatNames || '';
             tempTimes = item.rawTimes || { shacharit: [], mincha: [], arvit: [] };
             renderTempTimes();
+            document.getElementById('formTitle').innerText = "עריכת בית כנסת: " + item.name;
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        document.getElementById('cancelEditBtn').onclick = () => location.reload();
+        
+        document.getElementById('saveSettingsBtn').onclick = () => {
+            const settings = {
+                shabbatEntry: parseInt(document.getElementById('setting_entry').value),
+                shabbatExit: parseInt(document.getElementById('setting_exit').value),
+                alot: parseInt(document.getElementById('setting_alot').value),
+                talit: parseInt(document.getElementById('setting_talit').value),
+                tzeit: parseInt(document.getElementById('setting_tzeit').value)
+            };
+            set(ref(db, 'settings'), settings).then(() => alert('הגדרות נשמרו!'));
+        };
     </script>
 </body>
 </html>
