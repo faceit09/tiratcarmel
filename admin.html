@@ -25,7 +25,6 @@
             <input type="password" id="password" placeholder="סיסמה" class="w-full mb-6 p-3 border rounded-lg bg-gray-50">
             <button id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">הכנס למערכת</button>
             <p id="error-msg" class="text-red-500 text-sm mt-3 hidden">פרטים שגויים</p>
-            <p id="loading-msg" class="text-blue-500 text-sm mt-3 hidden">מאמת פרטים...</p>
         </div>
     </div>
 
@@ -37,162 +36,86 @@
             <button id="logoutBtn" class="text-red-500 text-sm hover:bg-red-50 px-3 py-1 rounded">התנתק</button>
         </nav>
 
-        <div class="container mx-auto mt-6 px-4 flex justify-center gap-4" id="adminNavButtons">
-            <button id="btn-prayers" class="nav-btn active px-6 py-2 rounded-full font-bold shadow-sm transition">
-                <i class="fas fa-synagogue ml-2"></i>ניהול בתי כנסת
-            </button>
-            <button id="btn-lessons" class="nav-btn px-6 py-2 rounded-full font-bold shadow-sm transition">
-                <i class="fas fa-book-open ml-2"></i>ניהול שיעורים
-            </button>
-        </div>
-
         <div class="container mx-auto p-6">
             
-            <div id="globalSettingsPanel" class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-6 hidden">
-                <h3 class="text-lg font-bold text-indigo-900 mb-3"><i class="fas fa-clock ml-2"></i>הגדרות זמנים גלובליות (דקות)</h3>
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                    <div>
-                        <label class="block font-bold mb-1">כניסת שבת (+)</label>
-                        <input type="number" id="setting_entry" class="w-full p-2 border rounded text-center" value="11">
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-1">יציאת שבת (+)</label>
-                        <input type="number" id="setting_exit" class="w-full p-2 border rounded text-center" value="0">
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-1">עלות השחר (+)</label>
-                        <input type="number" id="setting_alot" class="w-full p-2 border rounded text-center" value="14">
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-1">טלית/תפילין (-)</label>
-                        <input type="number" id="setting_talit" class="w-full p-2 border rounded text-center" value="-2">
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-1">צאת הכוכבים (-)</label>
-                        <input type="number" id="setting_tzeit" class="w-full p-2 border rounded text-center" value="-8">
-                    </div>
+            <div id="globalSettingsPanel" class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-6 hidden text-sm">
+                <h3 class="font-bold text-indigo-900 mb-3"><i class="fas fa-clock ml-2"></i>הגדרות זמנים גלובליות (דקות)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div><label class="block mb-1">כניסת שבת (+)</label><input type="number" id="setting_entry" class="w-full p-2 border rounded"></div>
+                    <div><label class="block mb-1">יציאת שבת (+)</label><input type="number" id="setting_exit" class="w-full p-2 border rounded"></div>
+                    <div><label class="block mb-1">עלות השחר (+)</label><input type="number" id="setting_alot" class="w-full p-2 border rounded"></div>
+                    <div><label class="block mb-1">טלית/תפילין (-)</label><input type="number" id="setting_talit" class="w-full p-2 border rounded"></div>
+                    <div><label class="block mb-1">צאת הכוכבים (-)</label><input type="number" id="setting_tzeit" class="w-full p-2 border rounded"></div>
                 </div>
-                <button id="saveSettingsBtn" class="mt-3 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 font-bold w-full md:w-auto">שמור הגדרות זמנים</button>
+                <button id="saveSettingsBtn" class="mt-3 bg-indigo-600 text-white px-4 py-2 rounded font-bold">שמור הגדרות</button>
             </div>
 
             <div id="section-prayers" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-1" id="editFormContainer">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-24 overflow-y-auto max-h-[90vh]">
-                        <div class="flex justify-between items-center mb-4 border-b pb-2">
-                            <h3 class="font-bold text-lg text-green-700" id="formTitle">הוספת בית כנסת</h3>
-                            <button id="cancelEditBtn" class="hidden text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded">ביטול / חדש</button>
-                        </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg text-green-700 mb-4" id="formTitle">הוספת בית כנסת</h3>
                         
                         <div id="authFields" class="bg-yellow-50 p-3 rounded border border-yellow-200 mb-4 hidden">
-                            <h4 class="text-xs font-bold text-yellow-800 mb-2">🔑 פרטי גישה לגבאי</h4>
+                            <label class="block text-xs font-bold mb-1">🔑 פרטי גישה לגבאי</label>
                             <div class="grid grid-cols-2 gap-2">
-                                <input type="text" id="shulUser" placeholder="שם משתמש" class="w-full p-2 border rounded text-sm">
-                                <input type="text" id="shulPass" placeholder="סיסמה" class="w-full p-2 border rounded text-sm">
+                                <input type="text" id="shulUser" placeholder="משתמש" class="p-2 border rounded text-sm">
+                                <input type="text" id="shulPass" placeholder="סיסמה" class="p-2 border rounded text-sm">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 mb-3">
-                            <div><label class="text-xs font-bold text-gray-500">שם רשמי</label><input type="text" id="shulName" class="w-full p-2 border rounded" required></div>
-                            <div><label class="text-xs font-bold text-gray-500">כינוי</label><input type="text" id="shulNickname" class="w-full p-2 border rounded"></div>
+                            <input type="text" id="shulName" placeholder="שם רשמי" class="p-2 border rounded text-sm w-full">
+                            <input type="text" id="shulNickname" placeholder="כינוי" class="p-2 border rounded text-sm w-full">
                         </div>
 
-                        <div class="mb-3"><label class="text-xs font-bold text-gray-500">כתובת</label><input type="text" id="shulAddress" class="w-full p-2 border rounded"></div>
-                        <div class="grid grid-cols-2 gap-3 mb-3">
-                            <div><label class="text-xs font-bold text-gray-500">נוסח</label><select id="shulNusach" class="w-full p-2 border rounded bg-slate-50"><option value="עדות המזרח">עדות המזרח</option><option value="ספרד">ספרד</option><option value="אשכנז">אשכנז</option><option value="תימן">תימן</option><option value="חב״ד">חב״ד</option><option value="מרוקאי">מרוקאי</option><option value="אחיד">אחיד</option></select></div>
-                            <div><label class="text-xs font-bold text-gray-500">רב</label><input type="text" id="shulRabbi" class="w-full p-2 border rounded"></div>
-                        </div>
-                        <div class="mb-4"><label class="text-xs font-bold text-gray-500">גבאי</label><input type="text" id="shulGabbai" class="w-full p-2 border rounded"></div>
+                        <textarea id="shulMessage" rows="2" class="w-full p-2 border rounded text-sm mb-2" placeholder="הודעה חשובה..."></textarea>
+                        <textarea id="shulRefuah" rows="2" class="w-full p-2 border rounded text-sm mb-2" placeholder="שמות לרפואה..."></textarea>
+                        <textarea id="shulNishmat" rows="2" class="w-full p-2 border rounded text-sm mb-4" placeholder="לעילוי נשמת..."></textarea>
 
-                        <div class="bg-blue-50 p-3 rounded-lg border border-blue-200 mb-4">
-                            <label class="block text-xs font-bold text-blue-900 mb-2"><i class="fas fa-bullhorn ml-1"></i> לוח מודעות ושמות</label>
-                            <div class="mb-2"><textarea id="shulMessage" rows="2" class="w-full p-2 border rounded text-sm" placeholder="הודעה חשובה..."></textarea></div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <textarea id="shulRefuah" rows="3" class="w-full p-2 border rounded text-sm" placeholder="שמות לרפואה..."></textarea>
-                                <textarea id="shulNishmat" rows="3" class="w-full p-2 border rounded text-sm" placeholder="לעילוי נשמת..."></textarea>
-                            </div>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
-                            <label class="block text-xs font-bold text-gray-700 mb-2">📅 זמנים</label>
+                        <div class="bg-gray-50 p-3 rounded-lg border mb-4">
                             <div class="grid grid-cols-2 gap-2 mb-2">
                                 <select id="timeType" class="p-2 text-sm border rounded"><option value="shacharit">שחרית</option><option value="mincha">מנחה</option><option value="arvit">ערבית</option></select>
                                 <select id="timeDay" class="p-2 text-sm border rounded">
-                                    <option value="chol">ימי חול (רגיל)</option>
-                                    <option value="Sunday">יום ראשון</option>
-                                    <option value="Monday">יום שני</option>
-                                    <option value="Tuesday">יום שלישי</option>
-                                    <option value="Wednesday">יום רביעי</option>
-                                    <option value="Thursday">יום חמישי</option>
-                                    <option value="Friday">יום שישי</option>
-                                    <option value="Motzash">מוצ"ש</option>
-                                    <option disabled>──</option>
+                                    <option value="chol">ימי חול</option>
+                                    <option value="יום ראשון">יום ראשון</option>
+                                    <option value="יום שני">יום שני</option>
+                                    <option value="יום שלישי">יום שלישי</option>
+                                    <option value="יום רביעי">יום רביעי</option>
+                                    <option value="יום חמישי">יום חמישי</option>
+                                    <option value="יום שישי">יום שישי</option>
+                                    <option value="מוצ״ש">מוצ״ש</option>
                                     <option value="shabbat">שבת</option>
-                                    <option value="chag">חג</option>
                                 </select>
                             </div>
-                            <div class="mb-2">
-                                <select id="timeMode" class="w-full p-2 text-sm border rounded bg-blue-50 text-blue-900 font-medium">
-                                    <option value="manual">🕒 שעה מדויקת</option>
-                                    <option value="before_sunset">⏳ דקות לפני שקיעה</option>
-                                    <option value="before_exit_shabbat">⏳ דקות לפני צאת שבת</option> <option value="sunset">🌅 שקיעה</option>
-                                    <option value="stars">✨ צאת הכוכבים</option>
-                                    <option value="candles">🕯️ כניסת שבת</option>
-                                    <option value="sunrise">☀️ הנץ החמה</option>
-                                    <option value="exit_shabbat">⭐ צאת שבת</option>
-                                </select>
-                            </div>
+                            <select id="timeMode" class="w-full p-2 text-sm border rounded mb-2">
+                                <option value="manual">🕒 שעה מדויקת</option>
+                                <option value="before_sunset">⏳ דק' לפני שקיעה</option>
+                                <option value="before_exit_shabbat">⏳ דק' לפני צאת שבת</option>
+                                <option value="sunset">🌅 שקיעה</option>
+                                <option value="stars">✨ צאת הכוכבים</option>
+                                <option value="exit_shabbat">⭐ צאת שבת</option>
+                            </select>
                             <div class="flex gap-2">
-                                <input type="time" id="timeClock" class="p-2 text-sm border rounded flex-grow">
-                                <input type="number" id="minutesInput" placeholder="דקות" class="hidden p-2 text-sm border rounded w-20 flex-grow">
-                                <button type="button" id="addTimeBtn" class="bg-green-600 text-white px-4 rounded hover:bg-green-700 font-bold"><i class="fas fa-plus"></i> הוסף</button>
+                                <input type="time" id="timeClock" class="p-2 border rounded flex-grow">
+                                <input type="number" id="minutesInput" placeholder="דקות" class="hidden p-2 border rounded w-20">
+                                <button id="addTimeBtn" class="bg-green-600 text-white px-4 rounded font-bold">הוסף</button>
                             </div>
                         </div>
 
-                        <div id="timesListContainer" class="space-y-2 mb-4 text-sm">
-                            <div id="list-shacharit" class="hidden border-r-2 border-yellow-400 pr-2"><span class="font-bold text-xs text-yellow-700 block">שחרית:</span><div class="flex flex-wrap gap-1 mt-1 content"></div></div>
-                            <div id="list-mincha" class="hidden border-r-2 border-orange-400 pr-2"><span class="font-bold text-xs text-orange-700 block">מנחה:</span><div class="flex flex-wrap gap-1 mt-1 content"></div></div>
-                            <div id="list-arvit" class="hidden border-r-2 border-blue-400 pr-2"><span class="font-bold text-xs text-blue-700 block">ערבית:</span><div class="flex flex-wrap gap-1 mt-1 content"></div></div>
+                        <div id="timesListContainer" class="space-y-2 mb-4">
+                            <div id="list-shacharit" class="hidden text-xs"><b>שחרית:</b> <div class="flex flex-wrap content"></div></div>
+                            <div id="list-mincha" class="hidden text-xs"><b>מנחה:</b> <div class="flex flex-wrap content"></div></div>
+                            <div id="list-arvit" class="hidden text-xs"><b>ערבית:</b> <div class="flex flex-wrap content"></div></div>
                         </div>
 
-                        <button id="saveShulBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 shadow-md">שמור בית כנסת</button>
+                        <button id="saveShulBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700">שמור בית כנסת</button>
                     </div>
                 </div>
                 
                 <div class="lg:col-span-2" id="shulsListContainer">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-full">
-                        <h3 class="font-bold text-lg mb-4">רשימת בתי הכנסת</h3>
-                        <div class="overflow-x-auto"><table class="w-full text-right text-sm"><thead class="bg-gray-50 text-gray-500 uppercase"><tr><th class="p-3">שם</th><th class="p-3">גבאי מורשה</th><th class="p-3 text-center">פעולות</th></tr></thead><tbody id="shulTableBody"><tr><td colspan="3" class="p-4 text-center text-gray-500">טוען נתונים...</td></tr></tbody></table></div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="section-lessons" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-1">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-24">
-                        <h3 class="font-bold text-lg text-blue-800 mb-4" id="lessonFormTitle">הוספת שיעור</h3>
-                        <div class="mb-3">
-                            <label class="text-xs font-bold text-gray-500">שייך לבית כנסת</label>
-                            <select id="lessonLocationSelect" class="w-full p-2 border rounded bg-green-50 font-bold focus:ring-2 ring-green-200"><option value="" disabled selected>טוען רשימה...</option></select>
-                        </div>
-                        <div class="mb-3"><label class="text-xs font-bold text-gray-500">רב</label><input type="text" id="lessonRabbi" class="w-full p-2 border rounded"></div>
-                        <div class="mb-3"><label class="text-xs font-bold text-gray-500">נושא</label><select id="lessonTopic" class="w-full p-2 border rounded"><option value="gemara">גמרא / דף יומי</option><option value="halacha">הלכה</option><option value="parasha">פרשת שבוע</option><option value="mussar">מוסר</option></select></div>
-                        <div class="mb-3"><label class="text-xs font-bold text-gray-500">כותרת</label><input type="text" id="lessonTitle" class="w-full p-2 border rounded"></div>
-                        <div class="mb-3"><label class="text-xs font-bold text-gray-500">יום</label><select id="lessonDay" class="w-full p-2 border rounded bg-blue-50"><option value="כל יום">כל יום</option><option value="יום ראשון">ראשון</option><option value="יום שני">שני</option><option value="יום שלישי">שלישי</option><option value="יום רביעי">רביעי</option><option value="יום חמישי">חמישי</option><option value="יום שישי">שישי</option><option value="מוצ״ש">מוצ״ש</option><option value="שבת">שבת</option></select></div>
-                        <div class="mb-4">
-                            <label class="text-xs font-bold text-gray-500">זמן</label>
-                            <div class="flex gap-2">
-                                <select id="lessonTimeType" class="w-1/2 p-2 text-sm border rounded bg-slate-50"><option value="manual">🕒 שעה מדויקת</option><option value="אחרי מנחה">אחרי מנחה</option><option value="לפני מנחה">לפני מנחה</option><option value="אחרי ערבית">אחרי ערבית</option><option value="לפני ערבית">לפני ערבית</option><option value="אחרי שחרית">אחרי שחרית</option><option value="לפני שחרית">לפני שחרית</option></select>
-                                <input type="time" id="lessonTimeClock" class="w-1/2 p-2 text-sm border rounded">
-                            </div>
-                        </div>
-                        <button id="saveLessonBtn" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">פרסם שיעור</button>
-                        <button id="cancelLessonEditBtn" class="w-full mt-2 text-red-500 text-sm hidden">ביטול</button>
-                    </div>
-                </div>
-                <div class="lg:col-span-2">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-full">
-                        <h3 class="font-bold text-lg mb-4">שיעורים פעילים</h3>
-                        <div class="overflow-x-auto"><table class="w-full text-right text-sm"><thead class="bg-gray-50 text-gray-500 uppercase"><tr><th class="p-3">בית כנסת</th><th class="p-3">רב ותוכן</th><th class="p-3">זמן</th><th class="p-3">פעולות</th></tr></thead><tbody id="lessonsTableBody"></tbody></table></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border h-full">
+                        <h3 class="font-bold text-lg mb-4">בתי כנסת במערכת</h3>
+                        <div class="overflow-x-auto"><table class="w-full text-right text-sm"><thead><tr class="bg-gray-50"><th class="p-3">שם</th><th class="p-3">גבאי</th><th class="p-3 text-center">פעולות</th></tr></thead><tbody id="shulTableBody"></tbody></table></div>
                     </div>
                 </div>
             </div>
@@ -218,31 +141,12 @@
 
         let tempTimes = { shacharit: [], mincha: [], arvit: [] };
         let editingShulId = null;
-        let editingLessonId = null;
-        let allShuls = [];
         let isSuperAdmin = false;
 
-        const settingsRef = ref(db, 'settings');
-        onValue(settingsRef, (snapshot) => {
-            const s = snapshot.val();
-            if (s && isSuperAdmin) {
-                document.getElementById('setting_entry').value = s.shabbatEntry || 11;
-                document.getElementById('setting_exit').value = s.shabbatExit || 0;
-                document.getElementById('setting_alot').value = s.alot || 14;
-                document.getElementById('setting_talit').value = s.talit || -2;
-                document.getElementById('setting_tzeit').value = s.tzeit || -8;
-            }
-        });
-
-        document.getElementById('saveSettingsBtn').onclick = () => {
-            const settings = {
-                shabbatEntry: parseInt(document.getElementById('setting_entry').value),
-                shabbatExit: parseInt(document.getElementById('setting_exit').value),
-                alot: parseInt(document.getElementById('setting_alot').value),
-                talit: parseInt(document.getElementById('setting_talit').value),
-                tzeit: parseInt(document.getElementById('setting_tzeit').value)
-            };
-            set(ref(db, 'settings'), settings).then(() => alert('הגדרות זמנים נשמרו בהצלחה!'));
+        // תרגום ימים לעברית
+        const translateDay = (day) => {
+            const map = { 'chol': 'חול', 'shabbat': 'שבת', 'Sunday': 'יום ראשון', 'Monday': 'יום שני', 'Tuesday': 'יום שלישי', 'Wednesday': 'יום רביעי', 'Thursday': 'יום חמישי', 'Friday': 'יום שישי', 'Motzash': 'מוצ״ש' };
+            return map[day] || day;
         };
 
         document.getElementById('loginBtn').onclick = async () => {
@@ -254,62 +158,44 @@
                 document.getElementById('dashboard-screen').classList.remove('hidden');
                 document.getElementById('authFields').classList.remove('hidden'); 
                 document.getElementById('globalSettingsPanel').classList.remove('hidden');
-                document.getElementById('navTitle').innerText = "מנהל מערכת";
-                renderShulTable();
                 return;
             }
-            try {
-                const dbRef = ref(db);
-                const snapshot = await get(child(dbRef, `users/${user}`));
-                if (snapshot.exists() && snapshot.val().password === pass) {
-                    isSuperAdmin = false;
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('dashboard-screen').classList.remove('hidden');
-                    document.getElementById('navTitle').innerText = `שלום, ${user}`;
-                    document.getElementById('adminNavButtons').classList.add('hidden'); 
-                    document.getElementById('shulsListContainer').classList.add('hidden'); 
-                    document.getElementById('section-prayers').classList.replace('lg:grid-cols-3', 'grid-cols-1'); 
-                    document.getElementById('editFormContainer').classList.replace('lg:col-span-1', 'lg:col-span-3'); 
-                    document.getElementById('cancelEditBtn').classList.add('hidden'); 
-                    loadSingleShulForGabbai(snapshot.val().shulId);
-                } else { alert("פרטים שגויים"); }
-            } catch (e) {}
+            const snapshot = await get(child(ref(db), `users/${user}`));
+            if (snapshot.exists() && snapshot.val().password === pass) {
+                isSuperAdmin = false;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dashboard-screen').classList.remove('hidden');
+                document.getElementById('shulsListContainer').classList.add('hidden');
+                document.getElementById('section-prayers').classList.replace('lg:grid-cols-3', 'grid-cols-1');
+                loadSingleShulForGabbai(snapshot.val().shulId);
+            } else { alert("פרטים שגויים"); }
         };
 
-        async function loadSingleShulForGabbai(shulId) {
-            const s = await get(child(ref(db), `prayers/${shulId}`));
-            if (s.exists()) loadShulForEdit(shulId, s.val());
+        async function loadSingleShulForGabbai(id) {
+            const s = await get(child(ref(db), `prayers/${id}`));
+            if (s.exists()) loadShulForEdit(id, s.val());
         }
 
         document.getElementById('logoutBtn').onclick = () => location.reload();
 
         document.getElementById('timeMode').onchange = () => {
             const mode = document.getElementById('timeMode').value;
-            const clock = document.getElementById('timeClock');
-            const mins = document.getElementById('minutesInput');
-            clock.classList.add('hidden'); mins.classList.add('hidden');
-            if (mode === 'manual') clock.classList.remove('hidden');
-            else if (mode.includes('before_')) mins.classList.remove('hidden');
+            document.getElementById('timeClock').classList.toggle('hidden', mode !== 'manual');
+            document.getElementById('minutesInput').classList.toggle('hidden', !mode.includes('before_'));
         };
 
         document.getElementById('addTimeBtn').onclick = () => {
             const type = document.getElementById('timeType').value;
-            const day = document.getElementById('timeDay').value;
+            const day = translateDay(document.getElementById('timeDay').value);
             const mode = document.getElementById('timeMode').value;
-            let timeValue = "";
+            let val = "";
+            if (mode === 'manual') val = document.getElementById('timeClock').value;
+            else if (mode === 'before_sunset') val = `${document.getElementById('minutesInput').value} דק' לפני שקיעה`;
+            else if (mode === 'before_exit_shabbat') val = `${document.getElementById('minutesInput').value} דק' לפני צאת שבת`;
+            else val = { 'sunset': 'שקיעה', 'stars': 'צאת הכוכבים', 'exit_shabbat': 'צאת שבת' }[mode];
 
-            if (mode === 'manual') {
-                if (!document.getElementById('timeClock').value) return alert('בחר שעה');
-                timeValue = document.getElementById('timeClock').value;
-            } else if (mode === 'before_sunset') {
-                timeValue = `${document.getElementById('minutesInput').value} דק' לפני שקיעה`;
-            } else if (mode === 'before_exit_shabbat') {
-                timeValue = `${document.getElementById('minutesInput').value} דק' לפני צאת שבת`;
-            } else {
-                const map = { 'sunset': 'שקיעה', 'stars': 'צאת הכוכבים', 'sunrise': 'הנץ', 'candles': 'כניסת שבת', 'exit_shabbat': 'צאת שבת' };
-                timeValue = map[mode];
-            }
-            tempTimes[type].push({ day: day, time: timeValue });
+            if(!val) return alert("הזן זמן");
+            tempTimes[type].push({ day, time: val });
             renderTempTimes();
         };
 
@@ -321,8 +207,8 @@
                     document.getElementById(`list-${type}`).classList.remove('hidden');
                     tempTimes[type].forEach((item, index) => {
                         const tag = document.createElement('div');
-                        tag.className = 'time-tag bg-gray-100 border p-1 rounded text-xs flex items-center mb-1 ml-1';
-                        tag.innerHTML = `<span>${item.day}: <b>${item.time}</b></span><button class="text-red-500 font-bold mr-2">×</button>`;
+                        tag.className = 'bg-gray-100 p-1 rounded m-1 flex items-center';
+                        tag.innerHTML = `<span>${item.day}: ${item.time}</span><button class="text-red-500 ml-2">×</button>`;
                         tag.querySelector('button').onclick = () => { tempTimes[type].splice(index, 1); renderTempTimes(); };
                         container.appendChild(tag);
                     });
@@ -332,75 +218,53 @@
 
         document.getElementById('saveShulBtn').onclick = () => {
             const name = document.getElementById('shulName').value;
-            if (!name) return alert('חובה להזין שם');
-            const formatTimes = (list, isShabbat) => {
-                const shabbatDays = ['shabbat', 'chag', 'Motzash'];
-                return list.filter(i => isShabbat ? shabbatDays.includes(i.day) : !shabbatDays.includes(i.day))
-                    .map(i => `${i.day === 'chol' ? '' : i.day + ' '}${i.time}`).join(', ');
+            if(!name) return alert("שם חובה");
+            const format = (list, isShabbat) => {
+                const shabbatSet = ['שבת', 'חג', 'מוצ״ש'];
+                return list.filter(i => isShabbat ? shabbatSet.includes(i.day) : !shabbatSet.includes(i.day))
+                    .map(i => `${i.day === 'חול' ? '' : i.day + ' '}${i.time}`).join(', ');
             };
             const data = {
                 name, nickname: document.getElementById('shulNickname').value,
-                address: document.getElementById('shulAddress').value, nusach: document.getElementById('shulNusach').value,
-                rabbi: document.getElementById('shulRabbi').value, gabbai: document.getElementById('shulGabbai').value,
-                message: document.getElementById('shulMessage').value, refuahNames: document.getElementById('shulRefuah').value,
+                message: document.getElementById('shulMessage').value,
+                refuahNames: document.getElementById('shulRefuah').value,
                 iluiNishmatNames: document.getElementById('shulNishmat').value,
-                shacharit_chol: formatTimes(tempTimes.shacharit, false), mincha_chol: formatTimes(tempTimes.mincha, false), arvit_chol: formatTimes(tempTimes.arvit, false),
-                shacharit_shabbat: formatTimes(tempTimes.shacharit, true), mincha_shabbat: formatTimes(tempTimes.mincha, true), arvit_shabbat: formatTimes(tempTimes.arvit, true),
+                shacharit_chol: format(tempTimes.shacharit, false), mincha_chol: format(tempTimes.mincha, false), arvit_chol: format(tempTimes.arvit, false),
+                shacharit_shabbat: format(tempTimes.shacharit, true), mincha_shabbat: format(tempTimes.mincha, true), arvit_shabbat: format(tempTimes.arvit, true),
                 rawTimes: tempTimes
             };
             const shulRef = editingShulId ? ref(db, 'prayers/' + editingShulId) : push(ref(db, 'prayers'));
             set(shulRef, data).then(() => {
-                if (isSuperAdmin && document.getElementById('shulUser').value) {
+                if(isSuperAdmin && document.getElementById('shulUser').value) {
                     set(ref(db, 'users/' + document.getElementById('shulUser').value), { password: document.getElementById('shulPass').value, shulId: shulRef.key });
                 }
-                alert('נשמר!'); if (isSuperAdmin) resetShulForm();
+                alert("נשמר!"); location.reload();
             });
         };
 
-        function resetShulForm() {
-            editingShulId = null; document.getElementById('editFormContainer').querySelectorAll('input, textarea').forEach(i => i.value = '');
-            tempTimes = { shacharit: [], mincha: [], arvit: [] }; renderTempTimes();
-        }
-
         onValue(ref(db, 'prayers'), (snap) => {
-            allShuls = snap.val() ? Object.entries(snap.val()).map(([id, val]) => ({id, ...val})) : [];
-            if (isSuperAdmin) renderShulTable();
-        });
-
-        function renderShulTable() {
+            if (!isSuperAdmin) return;
             const tbody = document.getElementById('shulTableBody');
             tbody.innerHTML = '';
-            allShuls.forEach(item => {
-                const tr = document.createElement('tr'); tr.className = 'border-b';
-                tr.innerHTML = `<td class="p-3 font-bold">${item.name}</td><td class="p-3">${item.shulUser || '-'}</td><td class="p-3 text-center"><button class="text-blue-500 mr-2"><i class="fas fa-pen"></i></button><button class="text-red-500"><i class="fas fa-trash"></i></button></td>`;
-                tr.querySelectorAll('button')[0].onclick = () => loadShulForEdit(item.id, item);
-                tr.querySelectorAll('button')[1].onclick = () => confirm('למחוק?') && remove(ref(db, 'prayers/' + item.id));
-                tbody.appendChild(tr);
-            });
-        }
+            if (snap.val()) {
+                Object.entries(snap.val()).forEach(([id, val]) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="p-3">${val.name}</td><td class="p-3">${val.nickname || '-'}</td><td class="p-3 text-center"><button class="text-blue-500">ערוך</button></td>`;
+                    tr.querySelector('button').onclick = () => loadShulForEdit(id, val);
+                    tbody.appendChild(tr);
+                });
+            }
+        });
 
         function loadShulForEdit(id, item) {
             editingShulId = id;
             document.getElementById('shulName').value = item.name;
             document.getElementById('shulNickname').value = item.nickname || '';
-            document.getElementById('shulAddress').value = item.address || '';
-            document.getElementById('shulNusach').value = item.nusach || 'עדות המזרח';
-            document.getElementById('shulRabbi').value = item.rabbi || '';
-            document.getElementById('shulGabbai').value = item.gabbai || '';
             document.getElementById('shulMessage').value = item.message || '';
             document.getElementById('shulRefuah').value = item.refuahNames || '';
             document.getElementById('shulNishmat').value = item.iluiNishmatNames || '';
             tempTimes = item.rawTimes || { shacharit: [], mincha: [], arvit: [] };
             renderTempTimes();
-            document.getElementById('formTitle').innerText = "עריכת בית כנסת";
-            document.getElementById('cancelEditBtn').classList.remove('hidden');
-        }
-
-        function updateLessonLocationOptions() {
-            const select = document.getElementById('lessonLocationSelect');
-            if(!select) return;
-            select.innerHTML = '<option value="" disabled selected>בחר בית כנסת...</option>';
-            allShuls.forEach(s => select.innerHTML += `<option value="${s.name}">${s.name}</option>`);
         }
     </script>
 </body>
