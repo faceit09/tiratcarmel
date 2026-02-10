@@ -21,11 +21,11 @@
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
             <div class="mb-4 text-blue-600 text-5xl"><i class="fas fa-synagogue"></i></div>
             <h2 class="text-2xl font-bold mb-4">כניסת גבאי / מנהל</h2>
-            <input type="text" id="username" placeholder="שם משתמש" class="w-full mb-3 p-3 border rounded-lg bg-gray-50 text-lg">
-            <input type="password" id="password" placeholder="סיסמה" class="w-full mb-6 p-3 border rounded-lg bg-gray-50 text-lg">
-            <button id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition transform active:scale-95">הכנס למערכת</button>
-            <p id="error-msg" class="text-red-500 text-sm mt-3 font-bold hidden"></p>
-            <p id="loading-msg" class="text-blue-500 text-sm mt-3 hidden animate-pulse">מתחבר לשרת...</p>
+            <input type="text" id="username" placeholder="שם משתמש" class="w-full mb-3 p-3 border rounded-lg bg-gray-50">
+            <input type="password" id="password" placeholder="סיסמה" class="w-full mb-6 p-3 border rounded-lg bg-gray-50">
+            <button id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">הכנס למערכת</button>
+            <p id="error-msg" class="text-red-500 text-sm mt-3 hidden">פרטים שגויים</p>
+            <p id="loading-msg" class="text-blue-500 text-sm mt-3 hidden">מאמת פרטים...</p>
         </div>
     </div>
 
@@ -34,15 +34,15 @@
             <div class="flex items-center text-blue-900 font-bold text-xl">
                 <i class="fas fa-cloud ml-2"></i> <span id="navTitle">פאנל ניהול</span>
             </div>
-            <button id="logoutBtn" class="text-red-500 text-sm hover:bg-red-50 px-3 py-1 rounded font-bold border border-red-100">התנתק</button>
+            <button id="logoutBtn" class="text-red-500 text-sm hover:bg-red-50 px-3 py-1 rounded">התנתק</button>
         </nav>
 
         <div class="container mx-auto mt-6 px-4 flex justify-center gap-4" id="adminNavButtons">
             <button id="btn-prayers" class="nav-btn active px-6 py-2 rounded-full font-bold shadow-sm transition">
-                <i class="fas fa-synagogue ml-2"></i> ניהול בתי כנסת
+                <i class="fas fa-synagogue ml-2"></i>ניהול בתי כנסת
             </button>
             <button id="btn-lessons" class="nav-btn px-6 py-2 rounded-full font-bold shadow-sm transition">
-                <i class="fas fa-book-open ml-2"></i> ניהול שיעורים
+                <i class="fas fa-book-open ml-2"></i>ניהול שיעורים
             </button>
         </div>
 
@@ -51,11 +51,26 @@
             <div id="globalSettingsPanel" class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-6 hidden">
                 <h3 class="text-lg font-bold text-indigo-900 mb-3"><i class="fas fa-clock ml-2"></i>הגדרות זמנים גלובליות (דקות)</h3>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                    <div><label class="block font-bold mb-1">כניסת שבת (+)</label><input type="number" id="setting_entry" class="w-full p-2 border rounded text-center" value="11"></div>
-                    <div><label class="block font-bold mb-1">יציאת שבת (+)</label><input type="number" id="setting_exit" class="w-full p-2 border rounded text-center" value="0"></div>
-                    <div><label class="block font-bold mb-1">עלות השחר (+)</label><input type="number" id="setting_alot" class="w-full p-2 border rounded text-center" value="14"></div>
-                    <div><label class="block font-bold mb-1">טלית/תפילין (-)</label><input type="number" id="setting_talit" class="w-full p-2 border rounded text-center" value="-2"></div>
-                    <div><label class="block font-bold mb-1">צאת הכוכבים (-)</label><input type="number" id="setting_tzeit" class="w-full p-2 border rounded text-center" value="-8"></div>
+                    <div>
+                        <label class="block font-bold mb-1">כניסת שבת (+)</label>
+                        <input type="number" id="setting_entry" class="w-full p-2 border rounded text-center" value="11">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">יציאת שבת (+)</label>
+                        <input type="number" id="setting_exit" class="w-full p-2 border rounded text-center" value="0">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">עלות השחר (+)</label>
+                        <input type="number" id="setting_alot" class="w-full p-2 border rounded text-center" value="14">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">טלית/תפילין (-)</label>
+                        <input type="number" id="setting_talit" class="w-full p-2 border rounded text-center" value="-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">צאת הכוכבים (-)</label>
+                        <input type="number" id="setting_tzeit" class="w-full p-2 border rounded text-center" value="-8">
+                    </div>
                 </div>
                 <button id="saveSettingsBtn" class="mt-3 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 font-bold w-full md:w-auto">שמור הגדרות זמנים</button>
             </div>
@@ -210,6 +225,20 @@
         let currentGabbaiShulId = null;
         let currentGabbaiShulName = null;
 
+        // --- הוספת האזנה למקש Enter בכניסה ---
+        document.getElementById('password').addEventListener('keyup', (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById('loginBtn').click();
+            }
+        });
+        document.getElementById('username').addEventListener('keyup', (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById('password').focus();
+            }
+        });
+
         // --- טעינת הגדרות גלובליות ---
         const settingsRef = ref(db, 'settings');
         onValue(settingsRef, (snapshot) => {
@@ -289,7 +318,6 @@
                 loadingMsg.classList.add('hidden');
                 errorMsg.classList.remove('hidden');
                 errorMsg.innerText = error.message || "שגיאה בהתחברות";
-                console.error("Login Error:", error);
             }
         };
 
@@ -474,6 +502,25 @@
 
         document.getElementById('cancelEditBtn').onclick = resetShulForm;
 
+        // --- פונקציית שכפול בית כנסת ---
+        window.duplicateShul = (item) => {
+            if(!confirm(`האם אתה בטוח שברצונך לשכפל את "${item.name}"?`)) return;
+            
+            // יצירת עותק עמוק של האובייקט
+            const newItem = JSON.parse(JSON.stringify(item));
+            
+            // ניקוי שדות מזהים
+            delete newItem.id;
+            newItem.name = newItem.name + " (עותק)";
+            newItem.shulUser = ""; // איפוס שם משתמש כדי למנוע כפילות
+            newItem.shulPass = ""; // איפוס סיסמה
+            
+            // שמירה ב-Firebase
+            push(ref(db, 'prayers'), newItem)
+                .then(() => alert("בית הכנסת שוכפל בהצלחה!"))
+                .catch(err => alert("שגיאה בשכפול: " + err.message));
+        };
+
         onValue(ref(db, 'prayers'), (snapshot) => {
             const data = snapshot.val();
             allShuls = []; 
@@ -500,13 +547,15 @@
                     <td class="p-3 text-xs">
                        ${item.shulUser ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">${item.shulUser}</span>` : '<span class="text-gray-400">-</span>'}
                     </td>
-                    <td class="p-3 text-center">
+                    <td class="p-3 text-center flex justify-center">
+                        <button class="copy-btn text-orange-500 hover:bg-orange-50 p-2 rounded ml-1" title="שכפל"><i class="fas fa-copy"></i></button>
                         <button class="edit-btn text-blue-500 hover:bg-blue-50 p-2 rounded ml-1"><i class="fas fa-pen"></i></button>
                         <button class="del-btn text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
                 tr.querySelector('.del-btn').onclick = () => { if(confirm('למחוק?')) remove(ref(db, 'prayers/' + item.id)); };
                 tr.querySelector('.edit-btn').onclick = () => loadShulForEdit(item.id, item);
+                tr.querySelector('.copy-btn').onclick = () => window.duplicateShul(item);
                 tbody.appendChild(tr);
             });
         }
