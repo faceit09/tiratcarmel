@@ -8,58 +8,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Heebo', sans-serif; }
-        .card-hover { transition: all 0.3s ease; cursor: pointer; }
-        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .modal { transition: opacity 0.2s ease; z-index: 1000; }
+        body { font-family: 'Heebo', sans-serif; background-color: #f1f5f9; }
+        .digital-clock { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+        .card-shul { transition: all 0.3s ease; cursor: pointer; border-radius: 20px; overflow: hidden; }
+        .card-shul:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal { transition: opacity 0.2s ease; z-index: 9999; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body>
 
-    <header class="bg-gradient-to-r from-blue-900 to-blue-700 text-white pb-6 shadow-2xl">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center border-b border-white/10 text-xs md:text-sm">
-            <div id="full-date" class="font-bold text-yellow-300">טוען תאריך...</div>
-            <div id="parasha" class="bg-blue-800 px-3 py-1 rounded-full font-bold">טוען פרשה...</div>
+    <header class="bg-gradient-to-b from-blue-900 to-blue-700 text-white shadow-2xl">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center border-b border-white/10">
+            <div id="date-heb" class="font-bold text-yellow-300 md:text-lg">טוען תאריך...</div>
+            <div id="parasha-name" class="bg-blue-800 px-4 py-1 rounded-full font-bold text-orange-300">פרשת השבוע</div>
         </div>
-        <div class="container mx-auto px-4 mt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 class="text-3xl md:text-5xl font-black tracking-tight">בתי כנסת בטירת הכרמל</h1>
+        
+        <div class="container mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-center md:text-right">
+                <h1 class="text-4xl md:text-6xl font-black mb-2 tracking-tighter">טירת הכרמל</h1>
+                <div id="clock" class="text-5xl font-light opacity-80 digital-clock">--:--:--</div>
+            </div>
             <div class="flex gap-4">
-                <div class="bg-white/10 p-3 rounded-xl text-center min-w-[100px]">
-                    <div class="text-[10px] opacity-70">כניסת שבת</div>
-                    <div id="shab-in" class="text-2xl font-bold">--:--</div>
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-3xl text-center min-w-[120px]">
+                    <div class="text-xs opacity-60">כניסת שבת</div>
+                    <div id="time-in" class="text-3xl font-bold">--:--</div>
                 </div>
-                <div class="bg-white/10 p-3 rounded-xl text-center min-w-[100px]">
-                    <div class="text-[10px] opacity-70">צאת שבת</div>
-                    <div id="shab-out" class="text-2xl font-bold">--:--</div>
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-3xl text-center min-w-[120px]">
+                    <div class="text-xs opacity-60">צאת שבת</div>
+                    <div id="time-out" class="text-3xl font-bold">--:--</div>
                 </div>
             </div>
         </div>
-        <div class="container mx-auto px-4 mt-6">
-            <div id="zmanim-bar" class="bg-black/20 rounded-lg p-2 flex justify-around text-[11px] md:text-sm">
+
+        <div class="container mx-auto px-4 pb-6">
+            <div id="zmanim-list" class="bg-black/20 rounded-2xl p-4 flex justify-around items-center text-sm md:text-base border border-white/5">
                 טוען זמני יום...
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 py-8">
-        <div class="max-w-md mx-auto mb-8">
-            <input type="text" id="search" placeholder="חפש בית כנסת..." class="w-full p-4 rounded-full shadow-md outline-none focus:ring-2 ring-blue-500">
+    <main class="container mx-auto px-4 py-10">
+        <div class="max-w-xl mx-auto mb-12">
+            <input type="text" id="shulSearch" placeholder="🔍 חפש בית כנסת או נוסח..." class="w-full p-5 rounded-3xl shadow-xl outline-none focus:ring-4 ring-blue-500/20 text-lg">
         </div>
-        <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        <div id="shulGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </main>
 
-    <div id="modal" class="modal opacity-0 pointer-events-none fixed inset-0 flex items-center justify-center p-4">
-        <div onclick="closeM()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="mTitle" class="text-2xl font-black text-blue-900"></h2>
-                    <button onclick="closeM()" class="text-slate-400 text-2xl">×</button>
+    <div id="modalShul" class="modal opacity-0 pointer-events-none fixed inset-0 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onclick="closeModal()"></div>
+        <div class="bg-white w-full max-w-3xl rounded-3xl shadow-2xl relative overflow-hidden max-h-[95vh] overflow-y-auto">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <h2 id="mTitle" class="text-3xl font-black text-blue-900"></h2>
+                    <button onclick="closeModal()" class="text-3xl text-slate-300 hover:text-red-500">×</button>
                 </div>
-                <div id="mBody" class="space-y-6"></div>
-                <div class="mt-8 flex justify-end">
-                    <a id="mNav" href="#" target="_blank" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-green-700 transition">
-                        <i class="fas fa-location-arrow"></i> ניווט למקום
+                <div id="mBody" class="space-y-8"></div>
+                <div class="mt-10 flex justify-between items-center border-t pt-6">
+                    <div id="mAddress" class="text-slate-500 font-bold"></div>
+                    <a id="mNav" href="#" target="_blank" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 hover:bg-green-700 shadow-lg transition">
+                        <i class="fas fa-location-arrow text-xl"></i> ניווט בוויז / גוגל
                     </a>
                 </div>
             </div>
@@ -82,38 +89,41 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        let liveData = [], daily = {};
+        let shuls = [], daily = {};
 
-        async function fetchInfo() {
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('he-IL', {hour12:false}); }, 1000);
+
+        async function fetchHebcal() {
             try {
-                const res = await fetch('https://www.hebcal.com/shabbat?cfg=json&latitude=32.7599&longitude=34.9707&tzid=Asia/Jerusalem&M=on');
-                const data = await res.json();
+                const sRes = await fetch('https://www.hebcal.com/shabbat?cfg=json&latitude=32.7599&longitude=34.9707&tzid=Asia/Jerusalem&M=on');
+                const sData = await sRes.json();
                 const zRes = await fetch('https://www.hebcal.com/zmanim?cfg=json&latitude=32.7599&longitude=34.9707&tzid=Asia/Jerusalem');
                 const zData = await zRes.json();
 
-                daily.sunset = zData.times.sunset;
-                daily.exit = data.items.find(i=>i.category==="havdalah").date;
-                
-                document.getElementById('full-date').innerText = `${new Date().toLocaleDateString('he-IL', {weekday:'long'})} | ${data.hebrew}`;
-                document.getElementById('parasha').innerText = data.items.find(i=>i.category==="parashat").hebrew;
-                document.getElementById('shab-in').innerText = new Date(data.items.find(i=>i.category==="candles").date).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-                document.getElementById('shab-out').innerText = new Date(daily.exit).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+                daily.sunset = zData.times.sunset; daily.exit = sData.items.find(i=>i.category==="havdalah").date;
+                daily.tzeit = zData.times.tzeit;
 
-                document.getElementById('zmanim-bar').innerHTML = `
+                document.getElementById('date-heb').innerText = `${new Date().toLocaleDateString('he-IL',{weekday:'long'})} | ${sData.hebrew}`;
+                document.getElementById('parasha-name').innerText = sData.items.find(i=>i.category==="parashat").hebrew;
+                document.getElementById('time-in').innerText = new Date(sData.items.find(i=>i.category==="candles").date).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+                document.getElementById('time-out').innerText = new Date(daily.exit).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+
+                document.getElementById('zmanim-list').innerHTML = `
                     <div>עלות השחר: <b>${new Date(zData.times.alotHaShachar).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</b></div>
-                    <div>הנץ: <b>${new Date(zData.times.sunrise).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</b></div>
+                    <div>הנץ החמה: <b>${new Date(zData.times.sunrise).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</b></div>
                     <div>שקיעה: <b>${new Date(zData.times.sunset).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</b></div>
                     <div>צאת הכוכבים: <b>${new Date(zData.times.tzeit).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</b></div>
                 `;
             } catch(e) {}
         }
 
-        function parse(txt) {
+        function parseT(txt) {
             if(!txt || !daily.sunset) return txt;
             if(txt.includes("לפני שקיעה")) {
                 let d = new Date(daily.sunset); d.setMinutes(d.getMinutes() - parseInt(txt));
                 return d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
             }
+            if(txt.includes("צאת הכוכבים")) return new Date(daily.tzeit).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
             if(txt.includes("לפני צאת שבת")) {
                 let d = new Date(daily.exit); d.setMinutes(d.getMinutes() - parseInt(txt));
                 return d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
@@ -122,53 +132,70 @@
         }
 
         onValue(ref(db, 'prayers'), (snap) => {
-            liveData = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id, ...v})) : [];
-            render();
+            shuls = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id, ...v})) : [];
+            renderGrid();
         });
 
-        function render() {
-            const grid = document.getElementById('grid'), s = document.getElementById('search').value.toLowerCase();
-            grid.innerHTML = "";
-            liveData.filter(sh=>sh.name.toLowerCase().includes(s)).forEach(sh => {
-                grid.innerHTML += `
-                    <div onclick="openM('${sh.id}')" class="card-hover bg-white rounded-2xl shadow-sm border p-5">
-                        <h3 class="text-xl font-black text-blue-900">${sh.name}</h3>
-                        <p class="text-xs text-slate-400 mb-4"><i class="fas fa-map-marker-alt"></i> ${sh.address || 'טירת הכרמל'}</p>
-                        <div class="grid grid-cols-2 gap-2 text-[11px]">
-                            <div class="bg-slate-50 p-2 rounded"><b>חול:</b><br>מנחה: ${parse(sh.mincha_chol.split(',')[0])}<br>ערבית: ${parse(sh.arvit_chol.split(',')[0])}</div>
-                            <div class="bg-blue-50 p-2 rounded"><b>שבת:</b><br>מנחה: ${parse(sh.mincha_shabbat.split(',')[0])}<br>ערבית: ${parse(sh.arvit_shabbat.split(',')[0])}</div>
+        function renderGrid() {
+            const g = document.getElementById('shulGrid'), q = document.getElementById('shulSearch').value.toLowerCase();
+            g.innerHTML = "";
+            shuls.filter(s => s.name.toLowerCase().includes(q)).forEach(s => {
+                g.innerHTML += `
+                    <div onclick="openModal('${s.id}')" class="card-shul bg-white shadow-lg p-6 border-b-8 border-blue-600">
+                        <h3 class="text-2xl font-black text-blue-900 mb-2">${s.name}</h3>
+                        <p class="text-slate-400 text-sm mb-4"><i class="fas fa-map-marker-alt"></i> ${s.address || 'טירת הכרמל'}</p>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="bg-slate-50 p-3 rounded-2xl">
+                                <b class="block mb-2 border-b">חול</b>
+                                מנחה: <b class="text-blue-700">${parseT(s.mincha_chol.split(',')[0])}</b><br>
+                                ערבית: <b class="text-blue-700">${parseT(s.arvit_chol.split(',')[0])}</b>
+                            </div>
+                            <div class="bg-blue-50 p-3 rounded-2xl">
+                                <b class="block mb-2 border-b">שבת</b>
+                                מנחה: <b class="text-blue-700">${parseT(s.mincha_shabbat.split(',')[0])}</b><br>
+                                ערבית: <b class="text-blue-700">${parseT(s.arvit_shabbat.split(',')[0])}</b>
+                            </div>
                         </div>
                     </div>`;
             });
         }
 
-        window.openM = (id) => {
-            const sh = liveData.find(x=>x.id===id);
-            document.getElementById('mTitle').innerText = sh.name + (sh.nickname ? ` (${sh.nickname})` : '');
-            document.getElementById('mNav').href = `http://googleusercontent.com/maps.google.com/2{encodeURIComponent(sh.address || sh.name)}`;
+        window.openModal = (id) => {
+            const s = shuls.find(x=>x.id===id);
+            document.getElementById('mTitle').innerText = s.name;
+            document.getElementById('mAddress').innerText = s.address || "טירת הכרמל";
+            document.getElementById('mNav').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + " " + (s.address || "טירת הכרמל"))}`;
             
-            let lessHtml = sh.lessons ? `<div class="bg-orange-50 p-4 rounded-xl border border-orange-100"><h4 class="font-bold text-orange-800 mb-2">שיעורי תורה:</h4>` : '';
-            if(sh.lessons) sh.lessons.forEach(l => lessHtml += `<div class="text-sm py-1 border-b border-orange-200"><b>הרב ${l.rabbi}</b>: ${l.topic} (${l.time})</div>`);
+            let lHtml = s.lessons ? `<div class="bg-orange-50 p-6 rounded-3xl border border-orange-100"><h4 class="font-black text-orange-800 mb-4 text-xl underline">שיעורי תורה במקום:</h4>` : '';
+            if(s.lessons) s.lessons.forEach(l => lHtml += `<div class="flex justify-between py-2 border-b border-orange-200"><b>הרב ${l.rabbi}</b><span>${l.topic} (${l.time})</span></div>`);
             
             document.getElementById('mBody').innerHTML = `
-                ${sh.message ? `<div class="bg-blue-100 p-3 rounded-lg text-blue-900 font-bold"><i class="fas fa-bullhorn"></i> ${sh.message}</div>` : ''}
-                <div class="grid grid-cols-2 gap-4 text-sm text-right">
-                    <div class="bg-slate-50 p-3 rounded-lg border"><b>זמני חול:</b><br>שחרית: ${sh.shacharit_chol}<br>מנחה: ${sh.mincha_chol}<br>ערבית: ${sh.arvit_chol}</div>
-                    <div class="bg-blue-50 p-3 rounded-lg border"><b>זמני שבת:</b><br>שחרית: ${sh.shacharit_shabbat}<br>מנחה: ${sh.mincha_shabbat}<br>ערבית: ${sh.arvit_shabbat}</div>
-                </div>${lessHtml}</div>`;
+                ${s.message ? `<div class="bg-blue-100 p-4 rounded-2xl text-blue-900 font-bold shadow-inner"><i class="fas fa-bullhorn ml-2"></i> ${s.message}</div>` : ''}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
+                    <div class="bg-slate-50 p-6 rounded-3xl border shadow-sm">
+                        <b class="text-xl text-blue-900 block border-b-2 mb-4 pb-2">זמני חול</b>
+                        <div class="space-y-2">
+                            <div>שחרית: <b>${s.shacharit_chol || '-'}</b></div>
+                            <div>מנחה: <b>${s.mincha_chol || '-'}</b></div>
+                            <div>ערבית: <b>${s.arvit_chol || '-'}</b></div>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 p-6 rounded-3xl border shadow-sm">
+                        <b class="text-xl text-blue-900 block border-b-2 mb-4 pb-2">זמני שבת</b>
+                        <div class="space-y-2">
+                            <div>שחרית: <b>${s.shacharit_shabbat || '-'}</b></div>
+                            <div>מנחה: <b>${s.mincha_shabbat || '-'}</b></div>
+                            <div>ערבית: <b>${s.arvit_shabbat || '-'}</b></div>
+                        </div>
+                    </div>
+                </div>${lHtml}</div>`;
             
-            const m = document.getElementById('modal');
-            m.classList.remove('opacity-0', 'pointer-events-none');
-            document.body.classList.add('modal-active');
+            document.getElementById('modalShul').classList.remove('opacity-0', 'pointer-events-none');
         };
 
-        window.closeM = () => {
-            document.getElementById('modal').classList.add('opacity-0', 'pointer-events-none');
-            document.body.classList.remove('modal-active');
-        };
-
-        document.getElementById('search').oninput = render;
-        fetchInfo();
+        window.closeModal = () => { document.getElementById('modalShul').classList.add('opacity-0', 'pointer-events-none'); };
+        document.getElementById('shulSearch').oninput = renderGrid;
+        fetchHebcal();
     </script>
 </body>
 </html>
