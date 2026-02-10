@@ -257,18 +257,20 @@
             errorMsg.classList.add('hidden');
             loadingMsg.classList.remove('hidden');
 
+            // בדיקת מנהל ראשי (Hardcoded)
             if (user === 'admin' && pass === '1234') {
                 isSuperAdmin = true;
                 loadingMsg.classList.add('hidden');
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('dashboard-screen').classList.remove('hidden');
                 document.getElementById('authFields').classList.remove('hidden'); 
-                document.getElementById('globalSettingsPanel').classList.remove('hidden'); // הצגת הגדרות זמנים למנהל
+                document.getElementById('globalSettingsPanel').classList.remove('hidden'); 
                 document.getElementById('navTitle').innerText = "מנהל מערכת";
                 renderShulTable();
                 return;
             }
 
+            // בדיקת משתמש גבאי מתוך Firebase
             try {
                 const dbRef = ref(db);
                 const snapshot = await get(child(dbRef, `users/${user}`));
@@ -348,14 +350,11 @@
                 if (!document.getElementById('timeClock').value) return alert('בחר שעה');
                 timeValue = document.getElementById('timeClock').value;
             } else if (mode === 'before_sunset') {
-                } else if (mode === 'before_exit_shabbat') {  // --- הוסף את הקטע הזה ---
-    if (!document.getElementById('minutesInput').value) return alert('הזן דקות');
-    timeValue = `${document.getElementById('minutesInput').value} דק' לפני צאת שבת`;
-} // --- עד כאן ---
-
-else {
                 if (!document.getElementById('minutesInput').value) return alert('הזן דקות');
                 timeValue = `${document.getElementById('minutesInput').value} דק' לפני שקיעה`;
+            } else if (mode === 'before_exit_shabbat') {
+                if (!document.getElementById('minutesInput').value) return alert('הזן דקות');
+                timeValue = `${document.getElementById('minutesInput').value} דק' לפני צאת שבת`;
             } else {
                 const map = { 'sunset': 'שקיעה', 'stars': 'צאת הכוכבים', 'sunrise': 'הנץ', 'candles': 'כניסת שבת' };
                 timeValue = map[mode];
@@ -378,7 +377,7 @@ else {
                         btn.onclick = () => { tempTimes[type].splice(index, 1); renderTempTimes(); };
                         
                         const tag = document.createElement('div');
-                        tag.className = 'time-tag bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs flex items-center';
+                        tag.className = 'time-tag bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs flex items-center mb-1';
                         const dayMap = { 'chol': 'חול', 'shabbat': 'שבת', 'chag': 'חג', 'Sunday': 'א\'', 'Monday': 'ב\'', 'Tuesday': 'ג\'', 'Wednesday': 'ד\'', 'Thursday': 'ה\'', 'Friday': 'ו\'', 'Motzash': 'מוצ"ש' };
                         tag.innerHTML = `<span>${dayMap[item.day] || item.day} <b>${item.time}</b></span>`;
                         tag.appendChild(btn);
@@ -520,10 +519,10 @@ else {
             editingShulId = id;
             document.getElementById('shulName').value = item.name;
             document.getElementById('shulNickname').value = item.nickname || '';
-            document.getElementById('shulAddress').value = item.address;
+            document.getElementById('shulAddress').value = item.address || '';
             document.getElementById('shulNusach').value = item.nusach;
-            document.getElementById('shulRabbi').value = item.rabbi;
-            document.getElementById('shulGabbai').value = item.gabbai;
+            document.getElementById('shulRabbi').value = item.rabbi || '';
+            document.getElementById('shulGabbai').value = item.gabbai || '';
             document.getElementById('shulUser').value = item.shulUser || '';
             document.getElementById('shulPass').value = item.shulPass || '';
             
