@@ -2,83 +2,89 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול לוח טירת הכרמל</title>
+    <title>ניהול לוח טירת הכרמל - שחזור נתונים</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>body { font-family: 'Heebo', sans-serif; }</style>
 </head>
 <body class="bg-slate-100 min-h-screen">
 
     <div id="login-screen" class="flex items-center justify-center h-screen bg-blue-900">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-96 text-center">
-            <h2 class="text-2xl font-bold mb-6 text-blue-900">כניסה לניהול</h2>
-            <input type="text" id="username" placeholder="שם משתמש" class="w-full mb-3 p-3 border rounded-lg">
-            <input type="password" id="password" placeholder="סיסמה" class="w-full mb-6 p-3 border rounded-lg">
-            <button id="loginBtn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">התחבר</button>
-            <p id="error-msg" class="text-red-500 text-sm mt-3 hidden">פרטים שגויים</p>
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-96 text-center border-t-8 border-yellow-500">
+            <h2 class="text-2xl font-black mb-6 text-blue-900 underline">כניסה למערכת הניהול</h2>
+            <input type="text" id="username" placeholder="שם משתמש" class="w-full mb-3 p-3 border rounded-xl shadow-inner">
+            <input type="password" id="password" placeholder="סיסמה" class="w-full mb-6 p-3 border rounded-xl shadow-inner">
+            <button id="loginBtn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-lg hover:bg-blue-700 transition">הצג נתונים עכשיו</button>
+            <p id="error-msg" class="text-red-500 text-sm mt-3 hidden font-bold">פרטים שגויים</p>
         </div>
     </div>
 
-    <div id="dashboard-screen" class="hidden">
-        <nav class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-50">
-            <h1 class="text-xl font-bold text-blue-900">ניהול בתי כנסת</h1>
-            <button onclick="location.reload()" class="bg-red-50 text-red-500 px-4 py-1 rounded font-bold">התנתק</button>
+    <div id="dashboard" class="hidden">
+        <nav class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-50 border-b-2 border-blue-600">
+            <h1 class="text-xl font-black text-blue-900"><i class="fas fa-database ml-2"></i> ניהול בתי כנסת - אונליין</h1>
+            <button onclick="location.reload()" class="bg-red-500 text-white px-4 py-2 rounded-xl font-bold text-sm">התנתק</button>
         </nav>
 
-        <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-xl border-t-4 border-blue-600">
-                <h3 id="formTitle" class="text-lg font-bold mb-4">עדכון נתונים</h3>
+        <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1 bg-white p-6 rounded-3xl shadow-2xl border-t-8 border-blue-600 sticky top-24">
+                <h3 id="formTitle" class="text-xl font-black mb-4 text-blue-900">הוספה / עדכון מהיר</h3>
                 <div class="space-y-3">
-                    <div id="authFields" class="bg-yellow-50 p-3 rounded border border-yellow-200 hidden">
-                        <label class="block text-xs font-bold mb-1 italic text-yellow-800">🔑 ניהול גבאי עצמי:</label>
-                        <input type="text" id="shulUser" placeholder="שם משתמש לגבאי" class="w-full p-2 border rounded text-sm mb-2">
-                        <input type="text" id="shulPass" placeholder="סיסמה לגבאי" class="w-full p-2 border rounded text-sm">
+                    <input type="text" id="shulName" placeholder="שם בית הכנסת" class="w-full p-2 border rounded-xl font-bold bg-blue-50">
+                    <input type="text" id="shulNickname" placeholder="כינוי" class="w-full p-2 border rounded-xl text-sm">
+                    <input type="text" id="shulAddress" placeholder="כתובת" class="w-full p-2 border rounded-xl text-sm">
+                    
+                    <div id="authFields" class="bg-yellow-50 p-3 rounded-xl border border-yellow-200">
+                        <label class="block text-[10px] font-bold text-yellow-800">פרטי גישה לגבאי:</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="shulUser" placeholder="שם משתמש" class="w-1/2 p-2 border rounded-lg text-xs">
+                            <input type="text" id="shulPass" placeholder="סיסמה" class="w-1/2 p-2 border rounded-lg text-xs">
+                        </div>
                     </div>
 
-                    <input type="text" id="shulName" placeholder="שם בית הכנסת" class="w-full p-2 border rounded font-bold">
-                    <input type="text" id="shulNickname" placeholder="כינוי" class="w-full p-2 border rounded text-sm">
-                    <input type="text" id="shulAddress" placeholder="כתובת" class="w-full p-2 border rounded text-sm">
-                    <textarea id="shulMessage" placeholder="הודעה חשובה..." class="w-full p-2 border rounded text-sm"></textarea>
-                    
-                    <div class="bg-gray-50 p-3 rounded border text-sm">
-                        <label class="block font-bold mb-2">הוספת זמן תפילה:</label>
+                    <textarea id="shulMessage" rows="2" placeholder="הודעה חשובה..." class="w-full p-2 border rounded-xl text-sm"></textarea>
+
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold mb-2">📅 הוספת זמני תפילה:</label>
                         <div class="flex gap-1 mb-2">
-                            <select id="tDay" class="w-1/2 p-1 border rounded"><option value="חול">חול</option><option value="יום א׳">יום א׳</option><option value="יום ב׳">יום ב׳</option><option value="יום ג׳">יום ג׳</option><option value="יום ד׳">יום ד׳</option><option value="יום ה׳">יום ה׳</option><option value="יום ו׳">יום ו׳</option><option value="שבת">שבת</option><option value="מוצ״ש">מוצ״ש</option></select>
-                            <select id="tType" class="w-1/2 p-1 border rounded"><option value="שחרית">שחרית</option><option value="מנחה">מנחה</option><option value="ערבית">ערבית</option></select>
+                            <select id="tDay" class="w-1/2 p-1 border rounded text-xs"><option value="חול">חול</option><option value="יום א׳">יום א׳</option><option value="יום ב׳">יום ב׳</option><option value="יום ג׳">יום ג׳</option><option value="יום ד׳">יום ד׳</option><option value="יום ה׳">יום ה׳</option><option value="יום ו׳">יום ו׳</option><option value="שבת">שבת</option><option value="מוצ״ש">מוצ״ש</option></select>
+                            <select id="tType" class="w-1/2 p-1 border rounded text-xs"><option value="שחרית">שחרית</option><option value="מנחה">מנחה</option><option value="ערבית">ערבית</option></select>
                         </div>
-                        <select id="tMode" onchange="toggleInp()" class="w-full p-1 border rounded mb-2">
+                        <select id="tMode" onchange="toggleInputs()" class="w-full p-1 border rounded text-[10px] mb-2">
                             <option value="manual">שעה קבועה</option>
                             <option value="before_sunset">דקות לפני שקיעה</option>
                             <option value="before_exit_shabbat">דקות לפני צאת שבת</option>
                             <option value="stars">צאת הכוכבים</option>
                             <option value="candles">כניסת שבת</option>
                         </select>
-                        <div class="flex gap-2">
-                            <input type="time" id="tClock" class="p-1 border rounded flex-grow">
-                            <input type="number" id="tMins" placeholder="דקות" class="hidden p-1 border rounded w-16">
-                            <button onclick="addT()" class="bg-green-600 text-white px-3 rounded font-bold">+</button>
+                        <div class="flex gap-1">
+                            <input type="time" id="tClock" class="p-1 border rounded flex-grow text-sm">
+                            <input type="number" id="tMins" placeholder="דקות" class="hidden p-1 border rounded w-12 text-sm">
+                            <button onclick="addTimeRow()" class="bg-green-600 text-white px-3 rounded-lg font-bold">+</button>
                         </div>
-                        <div id="tList" class="mt-3 space-y-1 max-h-32 overflow-y-auto"></div>
+                        <div id="tList" class="mt-2 space-y-1 max-h-24 overflow-y-auto"></div>
                     </div>
 
-                    <div class="bg-orange-50 p-3 rounded border border-orange-200">
-                        <label class="block text-xs font-bold mb-2 text-orange-800 italic">📚 שיעורי תורה:</label>
+                    <div class="bg-orange-50 p-3 rounded-xl border border-orange-200">
+                        <label class="block text-xs font-bold mb-1 italic">📚 שיעורי תורה:</label>
                         <input type="text" id="lRabbi" placeholder="שם הרב" class="w-full p-1 border rounded text-xs mb-1">
                         <input type="text" id="lTopic" placeholder="נושא" class="w-full p-1 border rounded text-xs mb-1">
                         <input type="text" id="lTime" placeholder="זמן" class="w-full p-1 border rounded text-xs mb-2">
-                        <button onclick="addL()" class="w-full bg-orange-600 text-white py-1 rounded text-xs font-bold">הוסף שיעור</button>
+                        <button onclick="addLessonRow()" class="w-full bg-orange-600 text-white py-1 rounded-lg text-[10px] font-bold">הוסף שיעור</button>
                         <div id="lList" class="mt-2 space-y-1"></div>
                     </div>
 
-                    <button id="saveBtn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg mt-4">שמור הכל</button>
+                    <button id="saveBtn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-xl mt-2 hover:bg-blue-700 transition">שמור ועדכן את האתר</button>
                 </div>
             </div>
 
             <div class="lg:col-span-2">
-                <div class="bg-white p-6 rounded-2xl shadow-xl h-full">
-                    <h3 class="font-bold border-b pb-4 mb-4 text-blue-900 text-xl">בתי כנסת במערכת</h3>
-                    <div id="shulList" class="grid grid-cols-1 md:grid-cols-2 gap-4">טוען נתונים...</div>
+                <div class="bg-white p-6 rounded-3xl shadow-xl h-full border border-slate-200">
+                    <h3 class="text-xl font-black text-blue-900 border-b-2 border-blue-100 pb-4 mb-6">בתי כנסת שנמצאו בענן:</h3>
+                    <div id="shulList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-full text-center py-20 text-slate-400 italic animate-pulse">מחפש נתונים בשרת...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -100,78 +106,102 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        let times = [], lessons = [], editId = null, superAdmin = false;
+        let tempTimes = [], tempLessons = [], editingId = null;
 
-        document.getElementById('loginBtn').onclick = async () => {
-            const u = document.getElementById('username').value, p = document.getElementById('password').value;
+        // לוגין
+        document.getElementById('loginBtn').onclick = () => {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
             if(u === 'admin' && p === '1234') {
-                superAdmin = true; showDash();
-                document.getElementById('authFields').classList.remove('hidden');
-                loadAll();
-                return;
-            }
-            const snap = await get(child(ref(db), `users/${u}`));
-            if(snap.exists() && snap.val().password === p) {
-                editId = snap.val().shulId; showDash();
-                document.getElementById('shulList').parentElement.classList.add('hidden');
-                const sSnap = await get(child(ref(db), `prayers/${editId}`));
-                if(sSnap.exists()) loadEdit(editId, sSnap.val());
-            } else { document.getElementById('error-msg').classList.remove('hidden'); }
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                loadAllData(); // טעינה בכוח
+            } else { alert("פרטים שגויים"); }
         };
 
-        function showDash() { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('dashboard-screen').classList.remove('hidden'); }
-        window.toggleInp = () => { const m = document.getElementById('tMode').value; document.getElementById('tClock').classList.toggle('hidden', m !== 'manual'); document.getElementById('tMins').classList.toggle('hidden', !m.includes('before_')); };
-        window.addT = () => {
-            const d = document.getElementById('timeDay').value, t = document.getElementById('timeType').value, m = document.getElementById('tMode').value;
-            let v = m === 'manual' ? document.getElementById('tClock').value : m.includes('before') ? document.getElementById('tMins').value + " דק' " + (m.includes('sunset') ? "לפני שקיעה" : "לפני צאת שבת") : {stars:"צאת הכוכבים", candles:"כניסת שבת"}[m];
-            if(v) { times.push({day:d, type:t, val:v}); renderL(); }
+        window.toggleInputs = () => {
+            const m = document.getElementById('tMode').value;
+            document.getElementById('tClock').classList.toggle('hidden', m !== 'manual');
+            document.getElementById('tMins').classList.toggle('hidden', !m.includes('before_'));
         };
-        window.addL = () => {
+
+        window.addTimeRow = () => {
+            const d = document.getElementById('tDay').value, t = document.getElementById('tType').value, m = document.getElementById('tMode').value;
+            let v = m === 'manual' ? document.getElementById('tClock').value : 
+                     m.includes('before') ? document.getElementById('tMins').value + " דק' " + (m.includes('sunset') ? "לפני שקיעה" : "לפני צאת שבת") :
+                     {stars:"צאת הכוכבים", candles:"כניסת שבת"}[m];
+            if(v) { tempTimes.push({day:d, type:t, val:v}); renderLists(); }
+        };
+
+        window.addLessonRow = () => {
             const r = document.getElementById('lRabbi').value, tp = document.getElementById('lTopic').value, tm = document.getElementById('lTime').value;
-            if(r && tp) { lessons.push({rabbi:r, topic:tp, time:tm}); renderL(); }
+            if(r && tp) { tempLessons.push({rabbi:r, topic:tp, time:tm}); renderLists(); }
         };
-        function renderL() {
+
+        function renderLists() {
             const tD = document.getElementById('tList'), lD = document.getElementById('lList');
             tD.innerHTML = ""; lD.innerHTML = "";
-            times.forEach((t, i) => tD.innerHTML += `<div class="flex justify-between bg-blue-50 p-1 border text-[10px] mb-1"><span>${t.day} ${t.type}: ${t.val}</span><button onclick="remT(${i})" class="text-red-500">X</button></div>`);
-            lessons.forEach((l, i) => lD.innerHTML += `<div class="flex justify-between bg-orange-50 p-1 border text-[10px] mb-1"><span>${l.rabbi}: ${l.topic}</span><button onclick="remL(${i})" class="text-red-500">X</button></div>`);
+            tempTimes.forEach((t, i) => tD.innerHTML += `<div class="flex justify-between bg-blue-50 p-1 border text-[9px] mb-1"><span>${t.day} | ${t.type}: ${t.val}</span><button onclick="remT(${i})" class="text-red-500 font-bold px-1">X</button></div>`);
+            tempLessons.forEach((l, i) => lD.innerHTML += `<div class="flex justify-between bg-orange-50 p-1 border text-[9px] mb-1"><span>${l.rabbi}: ${l.topic}</span><button onclick="remL(${i})" class="text-red-500 font-bold px-1">X</button></div>`);
         }
-        window.remT = (i) => { times.splice(i,1); renderL(); };
-        window.remL = (i) => { lessons.splice(i,1); renderL(); };
+        window.remT = (i) => { tempTimes.splice(i,1); renderLists(); };
+        window.remL = (i) => { tempLessons.splice(i,1); renderLists(); };
 
+        // שמירה חזקה
         document.getElementById('saveBtn').onclick = () => {
             const name = document.getElementById('shulName').value;
-            if(!name) return alert("הכנס שם");
-            const f = (isS, type) => times.filter(t => (isS ? (t.day==='שבת'||t.day==='מוצ״ש') : (t.day!=='שבת'&&t.day!=='מוצ״ש')) && t.type===type).map(t => (t.day==='חול'?'':t.day+' ')+t.val).join(', ');
+            if(!name) return alert("חובה להזין שם בית כנסת");
+            const filter = (isShab, type) => tempTimes.filter(t => (isShab ? (t.day==='שבת'||t.day==='מוצ״ש') : (t.day!=='שבת'&&t.day!=='מוצ״ש')) && t.type===type).map(t => (t.day==='חול'?'':t.day+' ')+t.val).join(', ');
+            
             const data = {
                 name, nickname: document.getElementById('shulNickname').value, address: document.getElementById('shulAddress').value, message: document.getElementById('shulMessage').value,
-                shacharit_chol: f(false,'שחרית'), mincha_chol: f(false,'מנחה'), arvit_chol: f(false,'ערבית'),
-                shacharit_shabbat: f(true,'שחרית'), mincha_shabbat: f(true,'מנחה'), arvit_shabbat: f(true,'ערבית'),
-                rawTimes: times, lessons: lessons, shulUser: document.getElementById('shulUser').value, shulPass: document.getElementById('shulPass').value
+                shacharit_chol: filter(false,'שחרית'), mincha_chol: filter(false,'מנחה'), arvit_chol: filter(false,'ערבית'),
+                shacharit_shabbat: filter(true,'שחרית'), mincha_shabbat: filter(true,'מנחה'), arvit_shabbat: filter(true,'ערבית'),
+                rawTimes: tempTimes, lessons: tempLessons, shulUser: document.getElementById('shulUser').value, shulPass: document.getElementById('shulPass').value
             };
-            const r = editId ? ref(db, `prayers/${editId}`) : push(ref(db, 'prayers'));
+
+            const r = editingId ? ref(db, `prayers/${editingId}`) : push(ref(db, 'prayers'));
             set(r, data).then(() => {
-                if(superAdmin && document.getElementById('shulUser').value) set(ref(db, `users/${document.getElementById('shulUser').value}`), {password: document.getElementById('shulPass').value, shulId: r.key});
-                alert("נשמר!"); if(superAdmin) location.reload();
+                if(document.getElementById('shulUser').value) set(ref(db, `users/${document.getElementById('shulUser').value}`), {password: document.getElementById('shulPass').value, shulId: r.key});
+                alert("הנתונים נשמרו בהצלחה!");
+                location.reload(); // רענון כדי לראות את השינוי ברשימה
             });
         };
 
-        function loadAll() {
+        // פונקציית טעינה עקשנית
+        function loadAllData() {
             onValue(ref(db, 'prayers'), (snap) => {
-                const c = document.getElementById('shulList'); c.innerHTML = "";
-                if(snap.val()) Object.entries(snap.val()).forEach(([id, v]) => {
-                    const d = document.createElement('div'); d.className = "bg-slate-50 p-3 rounded-xl border flex justify-between items-center shadow-sm";
-                    d.innerHTML = `<span><b>${v.name}</b></span><button class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs">ערוך</button>`;
-                    d.querySelector('button').onclick = () => loadEdit(id, v);
-                    c.appendChild(d);
-                });
+                const c = document.getElementById('shulList');
+                c.innerHTML = "";
+                const data = snap.val();
+                if(data) {
+                    Object.entries(data).forEach(([id, v]) => {
+                        const d = document.createElement('div');
+                        d.className = "bg-slate-50 p-4 rounded-2xl border border-slate-200 flex justify-between items-center shadow-sm hover:shadow-md transition";
+                        d.innerHTML = `<div><b class="text-blue-900">${v.name}</b><div class="text-[10px] text-slate-400 italic">${v.nickname || 'ללא כינוי'}</div></div>
+                                       <div class="flex gap-2"><button class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md">ערוך</button><button class="bg-red-50 text-red-500 p-2 rounded-xl text-xs"><i class="fas fa-trash"></i></button></div>`;
+                        d.querySelectorAll('button')[0].onclick = () => loadForEdit(id, v);
+                        d.querySelectorAll('button')[1].onclick = () => confirm(`למחוק את ${v.name}?`) && remove(ref(db, `prayers/${id}`));
+                        c.appendChild(d);
+                    });
+                } else {
+                    c.innerHTML = "<div class='col-span-full text-center py-10'>לא נמצאו נתונים. התחל להוסיף בתי כנסת!</div>";
+                }
             });
         }
-        function loadEdit(id, v) {
-            editId = id; document.getElementById('shulName').value = v.name; document.getElementById('shulNickname').value = v.nickname || "";
-            document.getElementById('shulAddress').value = v.address || ""; document.getElementById('shulMessage').value = v.message || "";
-            document.getElementById('shulUser').value = v.shulUser || ""; document.getElementById('shulPass').value = v.shulPass || "";
-            times = v.rawTimes || []; lessons = v.lessons || []; renderL();
+
+        function loadForEdit(id, v) {
+            editingId = id;
+            document.getElementById('shulName').value = v.name;
+            document.getElementById('shulNickname').value = v.nickname || "";
+            document.getElementById('shulAddress').value = v.address || "";
+            document.getElementById('shulMessage').value = v.message || "";
+            document.getElementById('shulUser').value = v.shulUser || "";
+            document.getElementById('shulPass').value = v.shulPass || "";
+            tempTimes = v.rawTimes || [];
+            tempLessons = v.lessons || [];
+            renderLists();
+            document.getElementById('formTitle').innerText = "עריכת: " + v.name;
             window.scrollTo({top:0, behavior:'smooth'});
         }
     </script>
