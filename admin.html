@@ -21,11 +21,11 @@
         <div class="bg-white p-8 rounded-xl shadow-2xl w-96 text-center">
             <div class="mb-4 text-blue-600 text-5xl"><i class="fas fa-synagogue"></i></div>
             <h2 class="text-2xl font-bold mb-4">כניסת גבאי / מנהל</h2>
-            <input type="text" id="username" placeholder="שם משתמש" class="w-full mb-3 p-3 border rounded-lg bg-gray-50">
-            <input type="password" id="password" placeholder="סיסמה" class="w-full mb-6 p-3 border rounded-lg bg-gray-50">
-            <button id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">הכנס למערכת</button>
-            <p id="error-msg" class="text-red-500 text-sm mt-3 hidden">פרטים שגויים</p>
-            <p id="loading-msg" class="text-blue-500 text-sm mt-3 hidden">מאמת פרטים...</p>
+            <input type="text" id="username" placeholder="שם משתמש" class="w-full mb-3 p-3 border rounded-lg bg-gray-50 text-lg">
+            <input type="password" id="password" placeholder="סיסמה" class="w-full mb-6 p-3 border rounded-lg bg-gray-50 text-lg">
+            <button id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition transform active:scale-95">הכנס למערכת</button>
+            <p id="error-msg" class="text-red-500 text-sm mt-3 font-bold hidden"></p>
+            <p id="loading-msg" class="text-blue-500 text-sm mt-3 hidden animate-pulse">מתחבר לשרת...</p>
         </div>
     </div>
 
@@ -34,15 +34,15 @@
             <div class="flex items-center text-blue-900 font-bold text-xl">
                 <i class="fas fa-cloud ml-2"></i> <span id="navTitle">פאנל ניהול</span>
             </div>
-            <button id="logoutBtn" class="text-red-500 text-sm hover:bg-red-50 px-3 py-1 rounded">התנתק</button>
+            <button id="logoutBtn" class="text-red-500 text-sm hover:bg-red-50 px-3 py-1 rounded font-bold border border-red-100">התנתק</button>
         </nav>
 
         <div class="container mx-auto mt-6 px-4 flex justify-center gap-4" id="adminNavButtons">
             <button id="btn-prayers" class="nav-btn active px-6 py-2 rounded-full font-bold shadow-sm transition">
-                <i class="fas fa-synagogue ml-2"></i>ניהול בתי כנסת
+                <i class="fas fa-synagogue ml-2"></i> ניהול בתי כנסת
             </button>
             <button id="btn-lessons" class="nav-btn px-6 py-2 rounded-full font-bold shadow-sm transition">
-                <i class="fas fa-book-open ml-2"></i>ניהול שיעורים
+                <i class="fas fa-book-open ml-2"></i> ניהול שיעורים
             </button>
         </div>
 
@@ -462,8 +462,8 @@
                 if (isSuperAdmin) {
                     resetShulForm();
                 } else {
-                    // אם זה גבאי - ריענון הדף כדי שיראה את הנתונים החדשים
-                    location.reload();
+                    // תיקון: לא מרענן את הדף, רק מעדכן את המשתנה הלוקאלי אם צריך
+                    console.log("Gabbai saved");
                 }
             }).catch(error => {
                 alert('שגיאה בשמירה: ' + error.message);
@@ -592,6 +592,7 @@
             // אם גבאי מחובר - מציג רק את בית הכנסת שלו
             if (!isSuperAdmin && currentGabbaiShulName) {
                 select.innerHTML = `<option value="${currentGabbaiShulName}">${currentGabbaiShulName}</option>`;
+                select.disabled = true; // נעל את הבחירה
                 return;
             }
 
@@ -616,7 +617,12 @@
 
         document.getElementById('saveLessonBtn').onclick = (e) => {
             e.preventDefault();
-            const location = document.getElementById('lessonLocationSelect').value;
+            // לגבאי: כפה את המיקום שלו
+            let location = document.getElementById('lessonLocationSelect').value;
+            if (!isSuperAdmin && currentGabbaiShulName) {
+                location = currentGabbaiShulName;
+            }
+            
             if (!location) return alert('בחר בית כנסת');
 
             let finalTime = "";
@@ -649,7 +655,12 @@
 
         function resetLessonForm() {
             editingLessonId = null;
-            document.getElementById('lessonLocationSelect').value = "";
+            
+            if (isSuperAdmin) {
+                document.getElementById('lessonLocationSelect').value = "";
+                document.getElementById('lessonLocationSelect').disabled = false;
+            }
+            
             document.getElementById('lessonRabbi').value = "";
             document.getElementById('lessonTopic').value = "gemara";
             document.getElementById('lessonTitle').value = "";
@@ -733,19 +744,3 @@
     </script>
 </body>
 </html>
-### שלב 3: בדיקת ה-Rules (חשוב מאוד!)
-אם גם אחרי העלאת הקובץ הזה זה לא עובד, זה אומר בוודאות שה-Rules של ה-Database שלך חוסמים כתיבה.
-
-1.  כנס לאתר Firebase Console.
-2.  בחר את הפרויקט `tirat-carmel-shul`.
-3.  בצד שמאל, לחץ על **Realtime Database**.
-4.  למעלה, לחץ על לשונית **Rules**.
-5.  העתק והדבק את הכללים האלו (שמאפשרים לכולם לכתוב - שימושי לאב-טיפוס):
-
-```json
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
