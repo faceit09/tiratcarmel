@@ -210,7 +210,6 @@
         let currentGabbaiShulId = null;
         let currentGabbaiShulName = null;
 
-        // --- הוספת האזנה למקש Enter בכניסה ---
         document.getElementById('password').addEventListener('keyup', (event) => {
             if (event.key === "Enter") {
                 event.preventDefault();
@@ -224,7 +223,6 @@
             }
         });
 
-        // --- טעינת הגדרות גלובליות ---
         const settingsRef = ref(db, 'settings');
         onValue(settingsRef, (snapshot) => {
             const s = snapshot.val();
@@ -248,7 +246,6 @@
             set(ref(db, 'settings'), settings).then(() => alert('הגדרות זמנים נשמרו בהצלחה!'));
         };
 
-        // --- לוגין ---
         document.getElementById('loginBtn').onclick = async () => {
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
@@ -314,7 +311,6 @@
                     currentGabbaiShulName = data.name; 
                     loadShulForEdit(shulId, data);
                     document.getElementById('saveShulBtn').innerText = "שמור שינויים";
-                    
                     updateLessonLocationOptions();
                     renderLessonTable();
                 } else {
@@ -462,7 +458,6 @@
                 if (isSuperAdmin) {
                     resetShulForm();
                 } else {
-                    // תיקון: לא מרענן את הדף, רק מעדכן את המשתנה הלוקאלי אם צריך
                     console.log("Gabbai saved");
                 }
             }).catch(error => {
@@ -495,20 +490,13 @@
 
         document.getElementById('cancelEditBtn').onclick = resetShulForm;
 
-        // --- פונקציית שכפול בית כנסת ---
         window.duplicateShul = (item) => {
             if(!confirm(`האם אתה בטוח שברצונך לשכפל את "${item.name}"?`)) return;
-            
-            // יצירת עותק עמוק של האובייקט
             const newItem = JSON.parse(JSON.stringify(item));
-            
-            // ניקוי שדות מזהים
             delete newItem.id;
             newItem.name = newItem.name + " (עותק)";
-            newItem.shulUser = ""; // איפוס שם משתמש כדי למנוע כפילות
-            newItem.shulPass = ""; // איפוס סיסמה
-            
-            // שמירה ב-Firebase
+            newItem.shulUser = ""; 
+            newItem.shulPass = ""; 
             push(ref(db, 'prayers'), newItem)
                 .then(() => alert("בית הכנסת שוכפל בהצלחה!"))
                 .catch(err => alert("שגיאה בשכפול: " + err.message));
@@ -521,7 +509,7 @@
                 Object.entries(data).forEach(([id, item]) => allShuls.push({id, ...item}));
             }
             if (isSuperAdmin) renderShulTable();
-            updateLessonLocationOptions(); // עדכון רשימת בתי הכנסת בטופס שיעורים
+            updateLessonLocationOptions(); 
         });
 
         function renderShulTable() {
@@ -568,7 +556,32 @@
             document.getElementById('shulRefuah').value = item.refuahNames || '';
             document.getElementById('shulNishmat').value = item.iluiNishmatNames || '';
             
-            tempTimes = item.rawTimes || { shacharit: [], mincha: [], arvit: [] };
+            // --- תיקון לטעינת נתונים ישנים ---
+            let raw = item.rawTimes;
+            let newStructure = { shacharit: [], mincha: [], arvit: [] };
+
+            if (!raw) {
+                // אם אין נתונים בכלל
+                tempTimes = newStructure;
+            } else if (Array.isArray(raw)) {
+                // אם זה מערך (פורמט ישן), המר אותו
+                raw.forEach(t => {
+                    let typeKey = t.type; // shacharit, mincha, arvit
+                    if (typeKey === 'shacarit') typeKey = 'shacharit'; // תיקון שגיאת כתיב אפשרית
+                    if (newStructure[typeKey]) {
+                        newStructure[typeKey].push({ day: t.day, time: t.val || t.time });
+                    }
+                });
+                tempTimes = newStructure;
+            } else {
+                // אם זה כבר אובייקט (פורמט חדש), רק וודא שכל המפתחות קיימים
+                if (!raw.shacharit) raw.shacharit = [];
+                if (!raw.mincha) raw.mincha = [];
+                if (!raw.arvit) raw.arvit = [];
+                tempTimes = raw;
+            }
+            // --- סוף תיקון ---
+
             renderTempTimes();
 
             document.getElementById('saveShulBtn').innerText = 'עדכן בית כנסת';
@@ -582,21 +595,17 @@
             }
         }
 
-        // --- ניהול שיעורים ---
-
         function updateLessonLocationOptions() {
             const select = document.getElementById('lessonLocationSelect');
             if(!select) return;
             select.innerHTML = '<option value="" disabled selected>בחר בית כנסת...</option>';
             
-            // אם גבאי מחובר - מציג רק את בית הכנסת שלו
             if (!isSuperAdmin && currentGabbaiShulName) {
                 select.innerHTML = `<option value="${currentGabbaiShulName}">${currentGabbaiShulName}</option>`;
-                select.disabled = true; // נעל את הבחירה
+                select.disabled = true; 
                 return;
             }
 
-            // מנהל - מציג הכל
             allShuls.sort((a, b) => a.name.localeCompare(b.name, 'he'));
             allShuls.forEach(s => {
                 select.innerHTML += `<option value="${s.name}">${s.name}</option>`;
@@ -617,7 +626,6 @@
 
         document.getElementById('saveLessonBtn').onclick = (e) => {
             e.preventDefault();
-            // לגבאי: כפה את המיקום שלו
             let location = document.getElementById('lessonLocationSelect').value;
             if (!isSuperAdmin && currentGabbaiShulName) {
                 location = currentGabbaiShulName;
@@ -676,7 +684,6 @@
         }
         document.getElementById('cancelLessonEditBtn').onclick = resetLessonForm;
 
-        // האזנה לשינויים בשיעורים ורינדור הטבלה
         onValue(ref(db, 'lessons'), (snapshot) => {
             allLessons = snapshot.val() || {};
             renderLessonTable();
@@ -689,7 +696,6 @@
             
             if (allLessons) {
                 Object.entries(allLessons).forEach(([id, item]) => {
-                    // סינון לגבאי: מציג רק שיעורים של בית הכנסת שלו
                     if (!isSuperAdmin && currentGabbaiShulName && item.location !== currentGabbaiShulName) {
                         return;
                     }
