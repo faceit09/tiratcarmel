@@ -85,9 +85,12 @@
 
     <main class="container mx-auto px-4 py-8 min-h-[500px] -mt-4 relative z-20">
         <div class="bg-white p-4 rounded-xl shadow-md mb-6 max-w-2xl mx-auto">
-            <div class="flex gap-2 items-center bg-slate-100 p-2 rounded-lg mb-3">
-                <i class="fas fa-search text-slate-400 ml-2"></i>
-                <input type="text" id="searchShul" placeholder="חפש בית כנסת, שם של רב, או נושא שיעור..." class="w-full bg-transparent outline-none font-medium">
+            <div class="flex items-center bg-slate-100 p-1 rounded-full mb-4 relative shadow-inner">
+                <i class="fas fa-search text-slate-400 mr-4 text-lg"></i>
+                <input type="text" id="searchShul" placeholder="חפש בית כנסת, שם של רב, או נושא..." class="w-full bg-transparent outline-none font-bold text-lg py-3 pl-20 text-slate-700">
+                <button id="manualSearchBtn" class="absolute left-1 top-1 bottom-1 bg-blue-600 text-white px-6 rounded-full font-bold hover:bg-blue-700 transition shadow-md flex items-center gap-2">
+                    חפש <i class="fas fa-arrow-left text-xs"></i>
+                </button>
             </div>
             
             <div class="flex justify-center gap-3">
@@ -196,7 +199,6 @@
             renderData();
         });
 
-        // פונקציית סינון
         window.setFilter = (type) => {
             currentFilter = type;
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -204,7 +206,6 @@
             renderData();
         }
 
-        // פונקציות חישוב זמנים
         function getAdjustedTime(isoDateString, minutesToAdd) {
             if (!isoDateString) return "--:--";
             const date = new Date(isoDateString);
@@ -234,7 +235,6 @@
             return timeStr;
         }
 
-        // פונקציית עזר להמרת שעה (HH:MM) לדקות מתחילת היום
         function timeToMinutes(timeStr) {
             if(!timeStr || !timeStr.includes(':')) return -1;
             const match = timeStr.match(/\d{2}:\d{2}/);
@@ -342,7 +342,6 @@
             const container = document.getElementById('prayers-grid');
             const search = document.getElementById('searchShul').value.toLowerCase();
             
-            // סינון בסיסי (שם, כתובת, נוסח, ושיעורים)
             let filteredShuls = liveShuls.filter(s => {
                 const inName = s.name.toLowerCase().includes(search);
                 const inAddress = (s.address || "").toLowerCase().includes(search);
@@ -360,7 +359,6 @@
                 return inName || inAddress || inNusach || inLessons;
             });
 
-            // מיון "מניין קרוב"
             if (currentFilter === 'minyan') {
                 const now = new Date();
                 const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -369,7 +367,6 @@
                     let nextPrayer = null;
                     let minDiff = Infinity;
                     
-                    // בדיקת זמני חול (פשטני, לא כולל שבת כרגע)
                     const timesToCheck = [
                         { type: 'שחרית', val: s.shacharit_chol },
                         { type: 'מנחה', val: s.mincha_chol },
@@ -395,10 +392,9 @@
 
                     return { ...s, nextPrayer };
                 })
-                .filter(s => s.nextPrayer) // רק מי שיש לו תפילה קרובה
+                .filter(s => s.nextPrayer) 
                 .sort((a, b) => a.nextPrayer.rawDiff - b.nextPrayer.rawDiff);
             } else {
-                // מיון רגיל לפי א-ב
                 filteredShuls.sort((a, b) => a.name.localeCompare(b.name, 'he'));
             }
 
@@ -420,7 +416,6 @@
                 const alertClass = isAlertActive ? 'minyan-alert bg-red-50' : 'bg-white border-slate-100';
                 const alertBadge = isAlertActive ? `<div class="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg animate-pulse z-20">חסר מניין!</div>` : '';
 
-                // סטריפ ירוק למניין קרוב
                 let nextPrayerBadge = '';
                 if (currentFilter === 'minyan' && shul.nextPrayer) {
                     nextPrayerBadge = `
@@ -503,7 +498,7 @@
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
                         document.getElementById('shabbat-exit').innerText = getAdjustedTime(havdalah.date, globalSettings.shabbatExit || 0);
-                        dailyTimes.exit = havdalah.date; // שמירה לחישובים
+                        dailyTimes.exit = havdalah.date;
                         const shabbatDate = havdalah.date.substring(0, 10);
                         fetchRabenuTam(shabbatDate);
                     }
@@ -577,6 +572,23 @@
         }
 
         fetchHebcalData();
+
+        // אירועי חיפוש
+        document.getElementById('manualSearchBtn').addEventListener('click', () => {
+            renderData();
+        });
+        
+        document.getElementById('searchShul').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                renderData();
+                // סגירת מקלדת במובייל אם צריך
+                document.getElementById('searchShul').blur();
+            }
+        });
+
+        // עדיין שומרים על חיפוש חי כי זה נעים יותר למשתמש, אבל הוספנו את הכפתור/אנטר לגיבוי
+        document.getElementById('searchShul').addEventListener('input', renderData);
+
     </script>
 </body>
 </html>
