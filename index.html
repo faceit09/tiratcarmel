@@ -8,6 +8,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+<link rel="manifest" href="manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+
     <style>
         body { font-family: 'Heebo', sans-serif; background-color: #f1f5f9; }
         .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
@@ -27,9 +34,13 @@
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); border-color: #ef4444; }
         }
         .minyan-alert { animation: pulse-red 2s infinite; border: 2px solid #ef4444; }
+        
+        /* Filter Buttons */
+        .filter-btn.active { background-color: #1e3a8a; color: white; border-color: #1e3a8a; }
+        .filter-btn { background-color: white; color: #64748b; border: 1px solid #e2e8f0; }
     </style>
 </head>
-<body class="text-slate-800 bg-slate-100">
+<body class="text-slate-800 bg-slate-100 flex flex-col min-h-screen">
 
     <header class="bg-gradient-to-b from-blue-900 to-blue-800 text-white shadow-xl pb-8 relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
@@ -79,10 +90,20 @@
         </div>
     </header>
 
-    <main class="container mx-auto px-4 py-8 min-h-[500px] -mt-4 relative z-20">
-        <div class="bg-white p-2 rounded-xl shadow-md mb-6 flex gap-2 max-w-lg mx-auto">
-            <div class="bg-slate-100 p-3 rounded-lg text-slate-500"><i class="fas fa-search"></i></div>
-            <input type="text" id="searchShul" placeholder="חפש בית כנסת..." class="w-full bg-transparent outline-none font-medium">
+    <main class="container mx-auto px-4 py-8 flex-grow -mt-4 relative z-20">
+        <div class="bg-white p-4 rounded-xl shadow-md mb-6 max-w-2xl mx-auto">
+            <div class="flex items-center bg-slate-100 p-1 rounded-full mb-4 relative shadow-inner">
+                <i class="fas fa-search text-slate-400 mr-4 text-lg"></i>
+                <input type="text" id="searchShul" placeholder="חפש בית כנסת, שם של רב, או נושא..." class="w-full bg-transparent outline-none font-bold text-lg py-3 pl-20 text-slate-700">
+                <button id="manualSearchBtn" class="absolute left-1 top-1 bottom-1 bg-blue-600 text-white px-6 rounded-full font-bold hover:bg-blue-700 transition shadow-md flex items-center gap-2">
+                    חפש <i class="fas fa-arrow-left text-xs"></i>
+                </button>
+            </div>
+            
+            <div class="flex justify-center gap-3">
+                <button onclick="setFilter('all')" id="btn-all" class="filter-btn active px-4 py-1 rounded-full font-bold text-sm transition-all shadow-sm">הכל</button>
+                <button onclick="setFilter('minyan')" id="btn-minyan" class="filter-btn px-4 py-1 rounded-full font-bold text-sm transition-all shadow-sm flex items-center gap-2"><i class="fas fa-clock"></i> מניין קרוב ⏱️</button>
+            </div>
         </div>
 
         <div id="prayers-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -92,6 +113,17 @@
             </div>
         </div>
     </main>
+
+    <footer class="bg-white border-t border-slate-200 py-8 mt-auto text-center relative z-20">
+        <div class="container mx-auto px-4">
+            <p class="text-slate-600 text-sm font-bold tracking-wide">
+                &copy; 2026 כל הזכויות שמורות למערכת הלוח הדיגיטלי - זמני תפילה ושיעורי תורה
+            </p>
+            <p class="text-slate-400 text-xs mt-2 italic">
+                "ויהי נועם ה' אלוקינו עלינו ומעשה ידינו כוננה עלינו"
+            </p>
+        </div>
+    </footer>
 
     <div id="shulModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
@@ -154,6 +186,7 @@
         let globalSettings = {};
         let minyanAlerts = {};
         let dailyTimes = {}; 
+        let currentFilter = 'all';
 
         function updateClock() {
             const now = new Date();
@@ -184,31 +217,48 @@
             renderData();
         });
 
+        window.setFilter = (type) => {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(type === 'all' ? 'btn-all' : 'btn-minyan').classList.add('active');
+            renderData();
+        }
+
+        function getAdjustedTime(isoDateString, minutesToAdd) {
+            if (!isoDateString) return "--:--";
+            const date = new Date(isoDateString);
+            date.setMinutes(date.getMinutes() + minutesToAdd);
+            return date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit', hour12: false});
+        }
+
         function parseDynamicTime(rawText) {
             if (!rawText || !dailyTimes.sunset) return rawText;
-            
             let timeStr = rawText;
-            let calculatedTime = "";
 
             if (rawText.includes("לפני שקיעה")) {
                 const mins = parseInt(rawText.match(/(\d+)\s*דק/)?.[1] || 0);
-                calculatedTime = getAdjustedTime(dailyTimes.sunset, -mins);
-                timeStr = timeStr.replace(/\d+\s*דק'\s*לפני\s*שקיעה/, calculatedTime);
-            }
-            else if (rawText.includes("צאת הכוכבים")) {
+                timeStr = timeStr.replace(/\d+\s*דק'\s*לפני\s*שקיעה/, getAdjustedTime(dailyTimes.sunset, -mins));
+            } else if (rawText.includes("לפני צאת שבת")) {
+                const mins = parseInt(rawText.match(/(\d+)\s*דק/)?.[1] || 0);
+                timeStr = timeStr.replace(/\d+\s*דק'\s*לפני\s*צאת\s*שבת/, getAdjustedTime(dailyTimes.exit, -mins));
+            } else if (rawText.includes("צאת הכוכבים")) {
                 timeStr = timeStr.replace("צאת הכוכבים", dailyTimes.tzeit);
-            }
-            else if (rawText.includes("שקיעה")) {
+            } else if (rawText.includes("שקיעה")) {
                 timeStr = timeStr.replace("שקיעה", getAdjustedTime(dailyTimes.sunset, 0));
-            }
-            else if (rawText.includes("כניסת שבת")) {
+            } else if (rawText.includes("כניסת שבת")) {
                 timeStr = timeStr.replace("כניסת שבת", dailyTimes.candles);
-            }
-            else if (rawText.includes("הנץ")) {
+            } else if (rawText.includes("הנץ")) {
                 timeStr = timeStr.replace("הנץ", dailyTimes.sunrise);
             }
-
             return timeStr;
+        }
+
+        function timeToMinutes(timeStr) {
+            if(!timeStr || !timeStr.includes(':')) return -1;
+            const match = timeStr.match(/\d{2}:\d{2}/);
+            if(!match) return -1;
+            const [h, m] = match[0].split(':').map(Number);
+            return h * 60 + m;
         }
 
         const formatList = (str) => {
@@ -274,7 +324,6 @@
                 messagesHtml += `</div>`;
             }
 
-            // החזרת טבלת הזמנים המלאה לפופ-אפ
             const detailsHtml = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -311,11 +360,64 @@
             const container = document.getElementById('prayers-grid');
             const search = document.getElementById('searchShul').value.toLowerCase();
             
-            liveShuls.sort((a, b) => a.name.localeCompare(b.name, 'he'));
-            const filteredShuls = liveShuls.filter(s => s.name.toLowerCase().includes(search));
+            let filteredShuls = liveShuls.filter(s => {
+                const inName = s.name.toLowerCase().includes(search);
+                const inAddress = (s.address || "").toLowerCase().includes(search);
+                const inNusach = (s.nusach || "").toLowerCase().includes(search);
+                
+                let inLessons = false;
+                if (liveLessons) {
+                    const shulLessons = liveLessons.filter(l => l.location === s.name);
+                    inLessons = shulLessons.some(l => 
+                        (l.rabbi && l.rabbi.toLowerCase().includes(search)) || 
+                        (l.topic && l.topic.toLowerCase().includes(search))
+                    );
+                }
+                
+                return inName || inAddress || inNusach || inLessons;
+            });
+
+            if (currentFilter === 'minyan') {
+                const now = new Date();
+                const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                
+                filteredShuls = filteredShuls.map(s => {
+                    let nextPrayer = null;
+                    let minDiff = Infinity;
+                    
+                    const timesToCheck = [
+                        { type: 'שחרית', val: s.shacharit_chol },
+                        { type: 'מנחה', val: s.mincha_chol },
+                        { type: 'ערבית', val: s.arvit_chol }
+                    ];
+
+                    timesToCheck.forEach(t => {
+                        if(!t.val) return;
+                        const times = t.val.split(', ');
+                        times.forEach(rawTime => {
+                            const parsed = parseDynamicTime(rawTime);
+                            const tMins = timeToMinutes(parsed);
+                            
+                            if (tMins > currentMinutes) {
+                                const diff = tMins - currentMinutes;
+                                if (diff < minDiff) {
+                                    minDiff = diff;
+                                    nextPrayer = { type: t.type, time: parsed, rawDiff: diff };
+                                }
+                            }
+                        });
+                    });
+
+                    return { ...s, nextPrayer };
+                })
+                .filter(s => s.nextPrayer) 
+                .sort((a, b) => a.nextPrayer.rawDiff - b.nextPrayer.rawDiff);
+            } else {
+                filteredShuls.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+            }
 
             if (filteredShuls.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-white rounded-2xl shadow"><p>לא נמצאו בתי כנסת.</p></div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-white rounded-2xl shadow"><p>לא נמצאו תוצאות.</p></div>`;
                 return;
             }
 
@@ -332,9 +434,19 @@
                 const alertClass = isAlertActive ? 'minyan-alert bg-red-50' : 'bg-white border-slate-100';
                 const alertBadge = isAlertActive ? `<div class="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg animate-pulse z-20">חסר מניין!</div>` : '';
 
+                let nextPrayerBadge = '';
+                if (currentFilter === 'minyan' && shul.nextPrayer) {
+                    nextPrayerBadge = `
+                        <div class="bg-green-50 border-b border-green-100 p-2 text-center">
+                            <span class="text-green-800 text-xs font-bold">התפילה הבאה: ${shul.nextPrayer.type} ב-${shul.nextPrayer.time}</span>
+                        </div>
+                    `;
+                }
+
                 container.innerHTML += `
                     <div class="card-hover ${alertClass} rounded-2xl shadow-sm border overflow-hidden flex flex-col h-full fade-in-up group relative">
                         ${alertBadge}
+                        ${nextPrayerBadge}
                         <div class="p-5 border-b border-slate-100 relative flex-grow transition" onclick="openShulModal('${shul.id}')">
                             <span class="absolute top-4 left-4 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full">${shul.nusach || 'תפילה'}</span>
                             <h3 class="text-lg font-black text-slate-800 mt-1">
@@ -366,15 +478,6 @@
                         </div>
                     </div>`;
             });
-        }
-
-        document.getElementById('searchShul').addEventListener('input', renderData);
-
-        function getAdjustedTime(isoDateString, minutesToAdd) {
-            if (!isoDateString) return "--:--";
-            const date = new Date(isoDateString);
-            date.setMinutes(date.getMinutes() + minutesToAdd);
-            return date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit', hour12: false});
         }
 
         async function fetchHebcalData() {
@@ -413,6 +516,7 @@
                     const havdalah = data.items.find(i => i.category === "havdalah");
                     if (havdalah) {
                         document.getElementById('shabbat-exit').innerText = getAdjustedTime(havdalah.date, globalSettings.shabbatExit || 0);
+                        dailyTimes.exit = havdalah.date;
                         const shabbatDate = havdalah.date.substring(0, 10);
                         fetchRabenuTam(shabbatDate);
                     }
@@ -486,6 +590,23 @@
         }
 
         fetchHebcalData();
+
+        // אירועי חיפוש
+        document.getElementById('manualSearchBtn').addEventListener('click', () => {
+            renderData();
+        });
+        
+        document.getElementById('searchShul').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                renderData();
+                // סגירת מקלדת במובייל אם צריך
+                document.getElementById('searchShul').blur();
+            }
+        });
+
+        // עדיין שומרים על חיפוש חי כי זה נעים יותר למשתמש, אבל הוספנו את הכפתור/אנטר לגיבוי
+        document.getElementById('searchShul').addEventListener('input', renderData);
+
     </script>
 </body>
 </html>
