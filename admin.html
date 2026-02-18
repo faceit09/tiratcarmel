@@ -83,9 +83,9 @@
 
                         <div class="mb-3"><label class="text-xs font-bold text-gray-500">כתובת</label><input type="text" id="shulAddress" class="w-full p-2 border rounded"></div>
                         
-                        <div class="mb-3 bg-green-50 p-2 rounded border border-green-100">
-                            <label class="text-xs font-bold text-green-700"><i class="fas fa-hand-holding-heart ml-1"></i> לינק לתרומה (נדרים פלוס / ביט וכו')</label>
-                            <input type="text" id="shulDonationLink" dir="ltr" class="w-full p-2 border rounded text-sm text-left" placeholder="https://...">
+                        <div class="mb-3 bg-green-50 p-3 rounded border border-green-200">
+                            <label class="block text-xs font-bold text-green-800 mb-1"><i class="fas fa-hand-holding-heart ml-1"></i> לינק לתרומה (נדרים פלוס / ביט / פייבוקס)</label>
+                            <input type="text" id="shulDonationLink" dir="ltr" class="w-full p-2 border border-green-300 rounded text-sm text-left font-mono" placeholder="https://...">
                         </div>
 
                         <div class="grid grid-cols-2 gap-3 mb-3">
@@ -172,18 +172,8 @@
                         <div class="mb-4">
                             <label class="text-xs font-bold text-gray-500">זמן</label>
                             <div class="flex gap-2">
-                                <select id="lessonTimeType" class="w-1/2 p-2 text-sm border rounded bg-slate-50">
-                                    <option value="manual">🕒 שעה מדויקת</option>
-                                    <option value="before_exit_shabbat">⏳ דקות לפני צאת שבת</option>
-                                    <option value="אחרי מנחה">אחרי מנחה</option>
-                                    <option value="לפני מנחה">לפני מנחה</option>
-                                    <option value="אחרי ערבית">אחרי ערבית</option>
-                                    <option value="לפני ערבית">לפני ערבית</option>
-                                    <option value="אחרי שחרית">אחרי שחרית</option>
-                                    <option value="לפני שחרית">לפני שחרית</option>
-                                </select>
+                                <select id="lessonTimeType" class="w-1/2 p-2 text-sm border rounded bg-slate-50"><option value="manual">🕒 שעה מדויקת</option><option value="אחרי מנחה">אחרי מנחה</option><option value="לפני מנחה">לפני מנחה</option><option value="אחרי ערבית">אחרי ערבית</option><option value="לפני ערבית">לפני ערבית</option><option value="אחרי שחרית">אחרי שחרית</option><option value="לפני שחרית">לפני שחרית</option></select>
                                 <input type="time" id="lessonTimeClock" class="w-1/2 p-2 text-sm border rounded">
-                                <input type="number" id="lessonMinutesInput" placeholder="דקות" class="hidden w-1/2 p-2 text-sm border rounded">
                             </div>
                         </div>
                         <button id="saveLessonBtn" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">פרסם שיעור</button>
@@ -495,7 +485,7 @@
             document.getElementById('shulMessage').value = '';
             document.getElementById('shulRefuah').value = '';
             document.getElementById('shulNishmat').value = '';
-            document.getElementById('shulDonationLink').value = '';
+            document.getElementById('shulDonationLink').value = ''; 
             
             tempTimes = { shacharit: [], mincha: [], arvit: [] };
             renderTempTimes();
@@ -554,8 +544,8 @@
                         <button class="del-btn text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
-                tr.querySelector('.del-l-btn').onclick = () => { if(confirm('למחוק?')) remove(ref(db, 'prayers/' + item.id)); };
-                tr.querySelector('.edit-l-btn').onclick = () => loadShulForEdit(item.id, item);
+                tr.querySelector('.del-btn').onclick = () => { if(confirm('למחוק?')) remove(ref(db, 'prayers/' + item.id)); };
+                tr.querySelector('.edit-btn').onclick = () => loadShulForEdit(item.id, item);
                 tr.querySelector('.copy-btn').onclick = () => window.duplicateShul(item);
                 tbody.appendChild(tr);
             });
@@ -631,23 +621,12 @@
         document.getElementById('lessonTimeType').onchange = () => {
             const mode = document.getElementById('lessonTimeType').value;
             const clock = document.getElementById('lessonTimeClock');
-            const minutesInput = document.getElementById('lessonMinutesInput');
-
             if (mode === 'manual') {
                 clock.classList.remove('hidden');
                 clock.classList.add('block');
-                minutesInput.classList.add('hidden');
-                minutesInput.classList.remove('block');
-            } else if (mode === 'before_exit_shabbat') {
-                clock.classList.add('hidden');
-                clock.classList.remove('block');
-                minutesInput.classList.remove('hidden');
-                minutesInput.classList.add('block');
             } else {
                 clock.classList.add('hidden');
                 clock.classList.remove('block');
-                minutesInput.classList.add('hidden');
-                minutesInput.classList.remove('block');
             }
         };
 
@@ -662,14 +641,9 @@
 
             let finalTime = "";
             const mode = document.getElementById('lessonTimeType').value;
-            
             if (mode === 'manual') {
                 if (!document.getElementById('lessonTimeClock').value) return alert('בחר שעה');
                 finalTime = document.getElementById('lessonTimeClock').value;
-            } else if (mode === 'before_exit_shabbat') {
-                const mins = document.getElementById('lessonMinutesInput').value;
-                if (!mins) return alert('הזן דקות');
-                finalTime = `${mins} דק' לפני צאת שבת`;
             } else {
                 finalTime = mode;
             }
@@ -704,11 +678,9 @@
             document.getElementById('lessonRabbi').value = "";
             document.getElementById('lessonTopic').value = "gemara";
             document.getElementById('lessonTitle').value = "";
-            document.getElementById('lessonMinutesInput').value = "";
             
             document.getElementById('lessonTimeType').value = 'manual';
             document.getElementById('lessonTimeClock').classList.remove('hidden');
-            document.getElementById('lessonMinutesInput').classList.add('hidden');
             
             document.getElementById('lessonFormTitle').innerText = 'הוספת שיעור';
             document.getElementById('saveLessonBtn').innerText = 'פרסם שיעור';
@@ -763,28 +735,14 @@
             document.getElementById('lessonTitle').value = item.title;
             document.getElementById('lessonDay').value = item.day;
 
-            // בדיקת אם זה זמן מוגדר מראש או שדה ידני/דקות
             const presetTimes = ["אחרי מנחה", "לפני מנחה", "אחרי ערבית", "לפני ערבית", "אחרי שחרית", "לפני שחרית"];
-            
             if (presetTimes.includes(item.time)) {
                 document.getElementById('lessonTimeType').value = item.time;
                 document.getElementById('lessonTimeClock').classList.add('hidden');
-                document.getElementById('lessonMinutesInput').classList.add('hidden');
-            } 
-            else if (item.time.includes("לפני צאת שבת")) {
-                document.getElementById('lessonTimeType').value = 'before_exit_shabbat';
-                // חילוץ המספר מתוך המחרוזת
-                const mins = parseInt(item.time) || ""; 
-                document.getElementById('lessonMinutesInput').value = mins;
-                document.getElementById('lessonTimeClock').classList.add('hidden');
-                document.getElementById('lessonMinutesInput').classList.remove('hidden');
-                document.getElementById('lessonMinutesInput').classList.add('block');
-            } 
-            else {
+            } else {
                 document.getElementById('lessonTimeType').value = 'manual';
                 document.getElementById('lessonTimeClock').value = item.time;
                 document.getElementById('lessonTimeClock').classList.remove('hidden');
-                document.getElementById('lessonMinutesInput').classList.add('hidden');
             }
 
             document.getElementById('lessonFormTitle').innerText = 'עריכת שיעור';
