@@ -8,12 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-<link rel="manifest" href="manifest.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
+<!-- הסרתי את ה-Service Worker מכיוון שהוא גורם לשגיאה בסביבת הפיתוח הנוכחית -->
 
     <style>
         body { font-family: 'Heebo', sans-serif; background-color: #f1f5f9; }
@@ -91,16 +86,20 @@
     </header>
 
     <main class="container mx-auto px-4 py-8 min-h-[500px] -mt-4 relative z-20">
-        <div class="bg-white p-2 rounded-xl shadow-md mb-6 flex flex-col gap-3 max-w-lg mx-auto">
-            <div class="flex gap-2 items-center bg-slate-100 p-2 rounded-lg">
-                <div class="p-2 text-slate-500"><i class="fas fa-search"></i></div>
-                <input type="text" id="searchShul" placeholder="חפש בית כנסת, שם של רב, או נושא שיעור..." class="w-full bg-transparent outline-none font-medium">
+        <!-- אזור חיפוש וסינון משודרג -->
+        <div class="bg-white p-4 rounded-xl shadow-md mb-6 max-w-2xl mx-auto">
+            <div class="flex items-center bg-slate-100 p-1 rounded-full mb-4 relative shadow-inner">
+                <i class="fas fa-search text-slate-400 mr-4 text-lg"></i>
+                <input type="text" id="searchShul" placeholder="חפש בית כנסת, רב, או שיעור..." class="w-full bg-transparent outline-none font-bold text-lg py-3 pl-24 text-slate-700">
+                <button id="manualSearchBtn" class="absolute left-1 top-1 bottom-1 bg-blue-600 text-white px-6 rounded-full font-bold hover:bg-blue-700 transition shadow-md">
+                    חפש
+                </button>
             </div>
             
-            <div class="flex justify-center gap-2">
-                <button onclick="setFilter('all')" id="btn-all" class="filter-btn active px-4 py-1 rounded-full font-bold text-sm transition-all shadow-sm">הכל</button>
-                <button onclick="setFilter('minyan')" id="btn-minyan" class="filter-btn px-4 py-1 rounded-full font-bold text-sm transition-all shadow-sm flex items-center gap-2"><i class="fas fa-clock"></i> מניין קרוב ⏱️</button>
-                <button onclick="setFilter('lesson')" id="btn-lesson" class="filter-btn px-4 py-1 rounded-full font-bold text-sm transition-all shadow-sm flex items-center gap-2"><i class="fas fa-book-open"></i> שיעור קרוב 📚</button>
+            <div class="flex justify-center gap-2 md:gap-3">
+                <button onclick="setFilter('all')" id="btn-all" class="filter-btn active px-4 py-1.5 rounded-full font-bold text-sm transition-all">הכל</button>
+                <button onclick="setFilter('minyan')" id="btn-minyan" class="filter-btn px-4 py-1.5 rounded-full font-bold text-sm transition-all flex items-center gap-2"><i class="fas fa-clock"></i> מניין קרוב</button>
+                <button onclick="setFilter('lesson')" id="btn-lesson" class="filter-btn px-4 py-1.5 rounded-full font-bold text-sm transition-all flex items-center gap-2"><i class="fas fa-book-open"></i> שיעור קרוב</button>
             </div>
         </div>
 
@@ -133,7 +132,7 @@
                     </div>
 
                 <div class="mt-6 pt-4 border-t border-gray-200 flex justify-end gap-2" id="modalFooterBtns">
-                    <!-- Buttons Injected via JS -->
+                    <!-- הכפתורים יוכנסו כאן דינמית -->
                 </div>
             </div>
         </div>
@@ -240,7 +239,7 @@
 
         function timeToMinutes(timeStr) {
             if(!timeStr || !timeStr.includes(':')) return -1;
-            const match = timeStr.match(/\d{2}:\d{2}/);
+            const match = timeStr.match(/\d{1,2}:\d{2}/);
             if(!match) return -1;
             const [h, m] = match[0].split(':').map(Number);
             return h * 60 + m;
@@ -418,20 +417,50 @@
                 const currentMinutes = now.getHours() * 60 + now.getMinutes();
                 const daysMap = { 0: "יום ראשון", 1: "יום שני", 2: "יום שלישי", 3: "יום רביעי", 4: "יום חמישי", 5: "יום שישי", 6: "שבת" };
                 const todayHeb = daysMap[now.getDay()];
+                const isShabbat = now.getDay() === 6;
 
                 filteredShuls = filteredShuls.map(s => {
                     let nextLesson = null;
                     let minDiff = Infinity;
                     
-                    const shulLessons = liveLessons.filter(l => l.location === s.name && (l.day === todayHeb || l.day === "כל יום"));
+                    const shulLessons = liveLessons.filter(l => (l.location || "").trim() === s.name.trim() && (l.day === todayHeb || l.day === "כל יום"));
+                    
                     shulLessons.forEach(l => {
-                        const parsed = parseDynamicTime(l.time || l.val);
-                        const tMins = timeToMinutes(parsed);
+                        let rawTime = l.time || l.val || "";
+                        let parsedTime = parseDynamicTime(rawTime);
+                        let tMins = timeToMinutes(parsedTime);
+
+                        // חישוב מיוחד אם הזמן בטקסט (כמו "אחרי מנחה")
+                        if (tMins === -1 && rawTime) {
+                            const getPrayerMins = (str) => {
+                                if (!str) return null;
+                                let first = str.split(', ')[0];
+                                let m = timeToMinutes(parseDynamicTime(first));
+                                return m > 0 ? m : null;
+                            };
+
+                            if (rawTime.includes('מנחה')) {
+                                let base = getPrayerMins(isShabbat ? s.mincha_shabbat : s.mincha_chol);
+                                if (base) tMins = rawTime.includes('לפני') ? base - 30 : base + 30;
+                            } else if (rawTime.includes('ערבית')) {
+                                let base = getPrayerMins(isShabbat ? s.arvit_shabbat : s.arvit_chol);
+                                if (base) tMins = rawTime.includes('לפני') ? base - 20 : base + 20;
+                            } else if (rawTime.includes('שחרית')) {
+                                let base = getPrayerMins(isShabbat ? s.shacharit_shabbat : s.shacharit_chol);
+                                if (base) tMins = rawTime.includes('לפני') ? base - 30 : base + 45;
+                            }
+                        }
+
+                        // גיבוי - אם לא הצלחנו לחשב זמנים דינמיים, עדיין נציג שהשיעור קיים היום
+                        if (tMins === -1) {
+                            tMins = 9999;
+                        }
+
                         if (tMins > currentMinutes) {
                             const diff = tMins - currentMinutes;
                             if (diff < minDiff) {
                                 minDiff = diff;
-                                nextLesson = { rabbi: l.rabbi, time: parsed, rawDiff: diff };
+                                nextLesson = { rabbi: l.rabbi || 'שיעור תורה', time: rawTime, rawDiff: diff };
                             }
                         }
                     });
@@ -442,7 +471,7 @@
             }
 
             if (filteredShuls.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-white rounded-2xl shadow"><p>לא נמצאו תוצאות.</p></div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-white rounded-2xl shadow"><p>לא נמצאו תוצאות לחיתוך זה.</p></div>`;
                 return;
             }
 
@@ -468,7 +497,7 @@
                     `;
                 } else if (currentFilter === 'lesson' && shul.nextLesson) {
                     let rabbiPrefix = shul.nextLesson.rabbi;
-                    if (!rabbiPrefix.includes('הרב')) rabbiPrefix = 'הרב ' + rabbiPrefix;
+                    if (!rabbiPrefix.includes('הרב') && rabbiPrefix !== 'שיעור תורה') rabbiPrefix = 'הרב ' + rabbiPrefix;
                     nextPrayerBadge = `
                         <div class="bg-orange-50 border-b border-orange-100 p-2 text-center">
                             <span class="text-orange-800 text-xs font-bold">שיעור קרוב: ${rabbiPrefix} ב-${shul.nextLesson.time}</span>
@@ -623,6 +652,10 @@
         }
 
         fetchHebcalData();
+
+        document.getElementById('manualSearchBtn').addEventListener('click', () => {
+            renderData();
+        });
 
         document.getElementById('searchShul').addEventListener('keyup', (e) => {
             if (e.key === 'Enter') {
